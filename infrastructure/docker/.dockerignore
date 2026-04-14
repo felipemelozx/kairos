@@ -1,0 +1,34 @@
+# Docker ignore files
+target/
+*.jar
+*.war
+*.log
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+docs/
+
+# AIOS (not needed in Docker image)
+.aios-core/
+.claude/
+.antigravity/
+.codex/
+.cursor/
+.gemini/
+.github/
+
+# Environment
+.env
+.env.*
