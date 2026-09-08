@@ -41,7 +41,8 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           ./mvnw verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=kairos-backend \
+            -Dsonar.projectKey=felipemelozx_kairos \
+            -Dsonar.organization=felipemelozx-trackmoney \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
@@ -78,7 +79,8 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
-            -Dsonar.projectKey=kairos-frontend
+            -Dsonar.projectKey=felipemelozx_kairos
+            -Dsonar.organization=felipemelozx-trackmoney
             -Dsonar.sources=apps/frontend
             -Dsonar.javascript.lcov.reportPaths=apps/frontend/coverage/lcov.info
             -Dsonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts
