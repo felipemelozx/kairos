@@ -51,7 +51,7 @@ WHERE organization_id = ? AND user_id = ?;
 
 **Application Validation**:
 ```java
-if (!memberGateway.existsByOrganizationIdAndUserId(orgId, userId)) {
+if (!organizationMemberRepository.existsByOrganizationIdAndUserId(orgId, userId)) {
     throw new AccessDeniedException("Not a member");
 }
 ```
@@ -481,9 +481,9 @@ WHERE organization_id = ? AND status = 'DOING';
 
 ```java
 // BAD: N+1 queries
-List<Task> tasks = taskGateway.findByOrganizationId(orgId);
+List<Task> tasks = taskRepository.findByOrganizationId(orgId);
 for (Task task : tasks) {
-    List<WorkSession> logs = logGateway.findByTaskId(task.getId()); // N queries
+    List<WorkSession> logs = workSessionRepository.findByTaskId(task.getId()); // N queries
     task.setLogs(logs);
 }
 ```

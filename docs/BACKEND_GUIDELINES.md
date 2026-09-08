@@ -14,7 +14,7 @@ Your responsibilities include:
 
 Designing clean, maintainable, and testable backend code
 
-Following clean/hexagonal architecture principles
+Following layered architecture principles (controller/service/repository/entity)
 
 Preserving long-term scalability and readability
 
@@ -28,67 +28,57 @@ You must never behave as a code generator only.
 You are expected to reason, validate, and challenge decisions when needed.
 
 2. Architecture Rules (Non-Negotiable)
-2.1 Core Isolation
+2.1 Layered Architecture
 
-The core layer:
+Projects must follow a classic Layered Architecture:
 
-❌ Must NOT depend on any framework
+controller
 
-No Spring
+HTTP endpoints, DTOs, request validation
 
-No JPA
+service
 
-No Lombok
+Business rules, orchestration, transactions
 
-No annotations from external libraries
+repository
 
-✅ May depend only on:
+Spring Data JPA interfaces (data access)
 
-java.*
+entity
 
-java.time.*
+JPA entities mapping database tables
 
-java.util.*
+Dependencies flow downward only:
 
-This rule is absolute.
+controller → service → repository → entity
 
-If any framework dependency leaks into core, it is considered a critical architectural violation.
+2.2 Layer Responsibilities
 
-2.2 Architectural Style
+Controllers must NOT contain business logic
 
-Projects must follow Clean / Hexagonal Architecture:
+Controllers only: parse HTTP, validate DTOs (@Valid), delegate to services, map to response DTOs
 
-Core
+Services must NOT expose database internals
 
-Domain entities
+Services hold all business rules and are @Transactional
 
-Business rules
+Services are the only caller of repositories
 
-Use cases
+Repositories must NOT contain business logic
 
-Gateway (port) interfaces
+Repositories are Spring Data JPA interfaces; custom queries only when needed
 
-Infrastructure
+Entities must NOT contain business logic
 
-Controllers
+Entities map database state only
 
-Persistence (JPA, JDBC, etc.)
+DTOs are used only at the HTTP edges and are never persisted
 
-Security
+2.3 Transaction & Cache Boundaries
 
-External APIs
+@Transactional and caching annotations live on service public methods only
 
-Framework configuration
-
-All dependencies must point inward, never outward.
-
-2.3 Ports & Adapters
-
-Every interaction between core and the outside world must go through interfaces (ports)
-
-Implementations live in infrastructure
-
-Use cases depend only on interfaces, never implementations
+Never place @Transactional or cache annotations on controllers or repositories
 
 3. Coding Standards
 3.1 Language & Style
@@ -129,13 +119,13 @@ Required fields
 
 Basic constraints (size, format, null checks)
 
-Use Case level
+Service level
 
 Business rules
 
 Cross-field validation
 
-Domain invariants
+Database invariants (checked before mutation)
 
 Never rely on only one layer.
 
@@ -143,7 +133,7 @@ Never rely on only one layer.
 
 Use SLF4J consistently
 
-Every use case must log:
+Every service method must log:
 
 Entry (input summary)
 
@@ -166,15 +156,13 @@ Logging must help debugging and production observability, not add noise
 
 Required for:
 
-Use cases
-
-Domain logic
+Services (business rules)
 
 Validation rules
 
 Must run without Spring context
 
-Use mocks when interacting with gateways
+Use mocks when interacting with repositories
 
 5.3 Integration Tests
 
@@ -228,9 +216,9 @@ business logic
 
 You must never:
 
-Introduce frameworks into core
+Put business logic in controllers or repositories
 
-Bypass use cases by calling repositories directly from controllers
+Bypass services by calling repositories directly from controllers
 
 Skip tests
 
@@ -246,7 +234,7 @@ Before writing code, always ask yourself:
 
 Does this respect architectural boundaries?
 
-Is the core still framework-agnostic?
+Are business rules in the service layer?
 
 Are validations applied correctly?
 
