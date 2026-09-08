@@ -12,6 +12,7 @@ jobs:
   sonarqube-backend:
     name: SonarQube Backend Scan
     runs-on: ubuntu-latest
+    if: ${{ vars.SONAR_ENABLED == 'true' }}
 
     steps:
       - name: Checkout code
@@ -48,6 +49,7 @@ jobs:
   sonarqube-frontend:
     name: SonarQube Frontend Scan
     runs-on: ubuntu-latest
+    if: ${{ vars.SONAR_ENABLED == 'true' }}
 
     steps:
       - name: Checkout code
