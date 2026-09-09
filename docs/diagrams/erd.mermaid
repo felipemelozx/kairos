@@ -1,0 +1,120 @@
+# Kairos - Entity-Relationship Diagram
+
+## Database Schema (PostgreSQL)
+
+```mermaid
+erDiagram
+    users ||--o{ organization_members : "membro de"
+    organizations ||--o{ organization_members : "tem"
+    organizations ||--o{ projects : "possui"
+    organizations ||--o{ tasks : "contém"
+    organizations ||--o{ time_blocks : "agenda"
+    organizations ||--o{ work_sessions : "registra"
+    projects ||--o{ tasks : "agrupa"
+    tasks }o--|| time_blocks : "opcionalmente agendada em"
+    tasks }o--o{ work_sessions : "opcionalmente registrada em"
+    time_blocks }o--o{ work_sessions : "opcionalmente registrada em"
+    projects }o--o{ time_blocks : "opcionalmente associada a"
+
+    users {
+        uuid id PK
+        varchar_255 email UK "único"
+        varchar_100 name
+        varchar_20 provider "GOOGLE, etc"
+        varchar_255 provider_id UK
+        text avatar_url
+        boolean active
+        timestamp created_at
+    }
+
+    organizations {
+        uuid id PK
+        varchar_100 name
+        varchar_50 slug UK "único"
+        uuid owner_id FK
+        varchar_20 status "ACTIVE, ARCHIVED"
+        timestamp created_at
+        timestamp deleted_at "soft delete"
+    }
+
+    organization_members {
+        uuid id PK
+        uuid organization_id FK
+        uuid user_id FK
+        varchar_20 role "OWNER, ADMIN, MEMBER"
+        timestamp joined_at
+    }
+
+    projects {
+        uuid id PK
+        uuid organization_id FK
+        varchar_100 name
+        text description
+        varchar_7 color "hex #RRGGBB"
+        varchar_20 status "ACTIVE, ARCHIVED"
+        timestamp created_at
+        timestamp deleted_at "soft delete"
+    }
+
+    tasks {
+        uuid id PK
+        uuid organization_id FK
+        varchar_200 title
+        text description
+        varchar_20 status "TODO, DOING, DONE"
+        uuid project_id FK
+        uuid time_block_id FK "nullable"
+        timestamp created_at
+        timestamp deleted_at "soft delete"
+    }
+
+    time_blocks {
+        uuid id PK
+        uuid organization_id FK
+        varchar_200 title
+        timestamp start_datetime
+        timestamp end_datetime
+        uuid project_id FK "nullable"
+        timestamp created_at
+        timestamp deleted_at "soft delete"
+    }
+
+    work_sessions {
+        uuid id PK
+        uuid organization_id FK
+        int duration_minutes
+        date session_date
+        uuid task_id FK "nullable"
+        uuid time_block_id FK "nullable"
+        text notes
+        timestamp created_at
+    }
+```
+
+## Table Relationships
+
+| From | To | Relationship | Cardinality |
+|------|-----|--------------|-------------|
+| users | organization_members | has | 1:N |
+| organizations | organization_members | has | 1:N |
+| organizations | projects | owns | 1:N |
+| organizations | tasks | contains | 1:N |
+| organizations | time_blocks | schedules | 1:N |
+| organizations | execution_logs | tracks | 1:N |
+| projects | tasks | groups | 1:N |
+| tasks | time_blocks | optionally scheduled in | 0:1 |
+| tasks | execution_logs | optionally logged in | 1:N |
+| time_blocks | execution_logs | optionally logged in | 1:N |
+| projects | time_blocks | optionally associated | 0:N |
+
+## Key Design Decisions
+
+1. **Multi-Tenancy**: All core entities (except users) have `organization_id` for data isolation
+2. **Soft Delete**: `deleted_at` timestamp on entities requiring audit trail (not work_sessions)
+3. **Optional Relationships**: Tasks and TimeBlocks can exist independently
+4. **Work Sessions**: Physical deletion (no soft delete) for performance
+5. **Unique Constraints**:
+   - `users.email` - unique login
+   - `users.(provider, provider_id)` - unique OAuth identity
+   - `organizations.slug` - URL-friendly identifier
+   - `organization_members.(organization_id, user_id)` - one membership per user per org

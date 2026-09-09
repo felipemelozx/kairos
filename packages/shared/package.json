@@ -1,0 +1,16 @@
+{
+  "name": "@kairos/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared types and utilities for Kairos monorepo",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

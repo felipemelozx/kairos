@@ -1,8 +1,24 @@
-HELP.md
+# Compiled & Package Files
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
 target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 
 ### STS ###
 .apt_generated
@@ -14,7 +30,7 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -25,9 +41,68 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
+
+### Node.js ###
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+### Next.js ###
+.next/
+out/
+
+### Turbo ###
+.turbo/
+
+### Environment ###
+.env
+.env.local
+.env*.local
+*.key
+*.pem
+
+### Build & Logs ###
+build/
+dist/
+*.log
+logs/
+
+### OS ###
+.DS_Store
+Thumbs.db
+*.swp
+
+### AIOS Local ###
+.aios-core/local/
+.claude/settings.local.json
+.aios/install-log.txt
+
+### IDEs & AI Tools Configuration ###
+.cursor/
+.codex/
+.gemini/
+.antigravity/
+.idea/
+AGENTS.md
+.aios-core/
+.claude/
+.github/agents/
+
+
+### Axios ###
+axios/
+**/axios/
+**/*axios*
+
+### Build artifacts ###
+*.tsbuildinfo
+
+### Coverage ###
+coverage/

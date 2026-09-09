@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd ../.. && npm run build --filter=kairos-frontend",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_API_URL": {
+      "description": "Backend API URL",
+      "value": "https://api.yourdomain.com"
+    }
+  }
+}
