@@ -27,7 +27,7 @@ public class CookieUtils {
             .httpOnly(true)
             .secure(true)
             .sameSite("Strict")
-            .path("/api/auth/refresh")
+            .path("/auth/refresh")
             .maxAge(604800) // 7 days
             .build();
         response.addHeader("Set-Cookie", cookie.toString());
@@ -47,7 +47,7 @@ public class CookieUtils {
             .httpOnly(true)
             .secure(true)
             .sameSite("Strict")
-            .path("/api/auth/refresh")
+            .path("/auth/refresh")
             .maxAge(0)
             .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());

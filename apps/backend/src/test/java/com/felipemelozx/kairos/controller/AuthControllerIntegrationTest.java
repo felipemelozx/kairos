@@ -51,7 +51,7 @@ class AuthControllerIntegrationTest {
     void shouldRegisterUserWhenValidRequest() {
         RegisterRequest request = new RegisterRequest("new@example.com", "password123", "John Doe");
 
-        ResponseEntity<ApiResponse> response = restTemplate.postForEntity("/api/auth/register", request, ApiResponse.class);
+        ResponseEntity<ApiResponse> response = restTemplate.postForEntity("/auth/register", request, ApiResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(userRepository.existsByEmail("new@example.com")).isTrue();
@@ -62,7 +62,7 @@ class AuthControllerIntegrationTest {
         createUser("exists@example.com", "password123", "Existing");
 
         RegisterRequest request = new RegisterRequest("exists@example.com", "password123", "New");
-        ResponseEntity<ApiResponse> response = restTemplate.postForEntity("/api/auth/register", request, ApiResponse.class);
+        ResponseEntity<ApiResponse> response = restTemplate.postForEntity("/auth/register", request, ApiResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
     }
