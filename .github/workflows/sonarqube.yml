@@ -6,11 +6,10 @@ on:
   push:
     branches:
       - main
-      - develop
 
 jobs:
-  sonarqube-backend:
-    name: SonarQube Backend Scan
+  sonarqube:
+    name: SonarQube Scan
     runs-on: ubuntu-latest
     if: ${{ vars.SONAR_ENABLED == 'true' }}
 
@@ -27,37 +26,6 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Cache SonarQube packages
-        uses: actions/cache@v5
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      - name: Build and analyze with SonarQube
-        working-directory: apps/backend
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: |
-          ./mvnw verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=felipemelozx_kairos \
-            -Dsonar.organization=felipemelozx-trackmoney \
-            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-
-  sonarqube-frontend:
-    name: SonarQube Frontend Scan
-    runs-on: ubuntu-latest
-    if: ${{ vars.SONAR_ENABLED == 'true' }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
@@ -68,9 +36,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests with coverage
+      - name: Run frontend tests with coverage
         working-directory: apps/frontend
         run: npm test -- --coverage --watchAll=false
+
+      - name: Run backend tests
+        working-directory: apps/backend
+        run: ./mvnw --batch-mode verify
+
+      - name: Normalize frontend coverage report paths
+        run: |
+          sed -i -E 's|^SF:([^/])|SF:apps/frontend/\1|' apps/frontend/coverage/lcov.info
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
@@ -81,6 +64,7 @@ jobs:
           args: >
             -Dsonar.projectKey=felipemelozx_kairos
             -Dsonar.organization=felipemelozx-trackmoney
-            -Dsonar.sources=apps/frontend
+            -Dsonar.sources=apps/frontend/src,apps/backend/src/main/java
             -Dsonar.javascript.lcov.reportPaths=apps/frontend/coverage/lcov.info
-            -Dsonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts
+            -Dsonar.coverage.jacoco.xmlReportPaths=apps/backend/target/site/jacoco/jacoco.xml
+            -Dsonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*Test.java,**/*Tests.java,**/KairosApplication.java

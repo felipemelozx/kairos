@@ -103,3 +103,6 @@ axios/
 
 ### Build artifacts ###
 *.tsbuildinfo
+
+### Coverage ###
+coverage/
