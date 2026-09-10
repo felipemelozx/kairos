@@ -12,35 +12,35 @@
 
 ### Backend
 
-- [ ] `CsrfTokenService` generates signed CSRF tokens (HMAC-SHA256, 32 bytes random, 15 min expiry)
-- [ ] `CsrfTokenService` validates signed CSRF tokens (constant-time comparison)
-- [ ] `CsrfValidationFilter` validates `X-CSRF-Token` header matches `CSRF_TOKEN` cookie on state-changing methods (POST/PUT/PATCH/DELETE)
-- [ ] `CsrfValidationFilter` skips public routes: `/auth/login`, `/auth/register`, `/auth/refresh`, `/oauth2/**`, `/login/oauth2/**`
-- [ ] `OriginValidationFilter` validates `Origin` header against allowlist on state-changing methods
-- [ ] `OriginValidationFilter` falls back to `Referer` when `Origin` absent; logs WARN when both absent
-- [ ] `CookieUtils.addCsrfTokenCookie` sets `CSRF_TOKEN` cookie: `Secure`, `SameSite=Strict`, `httpOnly=false`, host-only (no `Domain`), maxAge 900s
-- [ ] `CookieUtils.clearCsrfTokenCookie` clears CSRF cookie on logout
-- [ ] CSRF cookie emitted in: `/auth/login`, `/auth/register`, `/auth/refresh`, OAuth2 success
-- [ ] CORS configured: allowlist-based, `allowCredentials=true`, explicit allowed methods/headers
-- [ ] `SecurityConfig` registers both filters in correct order
-- [ ] All tests passing
+- [x] `CsrfTokenService` generates signed CSRF tokens (HMAC-SHA256, 32 bytes random, 15 min expiry)
+- [x] `CsrfTokenService` validates signed CSRF tokens (constant-time comparison)
+- [x] `CsrfValidationFilter` validates `X-CSRF-Token` header matches `CSRF_TOKEN` cookie on state-changing methods (POST/PUT/PATCH/DELETE)
+- [x] `CsrfValidationFilter` skips public routes: `/auth/login`, `/auth/register`, `/auth/refresh`, `/oauth2/**`, `/login/oauth2/**`
+- [x] `OriginValidationFilter` validates `Origin` header against allowlist on state-changing methods
+- [x] `OriginValidationFilter` falls back to `Referer` when `Origin` absent; logs WARN when both absent
+- [x] `CookieUtils.addCsrfTokenCookie` sets `CSRF_TOKEN` cookie: `Secure`, `SameSite=Strict`, `httpOnly=false`, host-only (no `Domain`), maxAge 900s
+- [x] `CookieUtils.clearCsrfTokenCookie` clears CSRF cookie on logout
+- [ ] CSRF cookie emitted in: `/auth/login`, `/auth/register`, `/auth/refresh`, OAuth2 success (OAuth2 flow without test)
+- [x] CORS configured: allowlist-based, `allowCredentials=true`, explicit allowed methods/headers
+- [x] `SecurityConfig` registers both filters in correct order
+- [x] All tests passing
 
 ### Frontend
 
-- [ ] `lib/csrf.ts` — `getCsrfToken()` reads `CSRF_TOKEN` cookie
-- [ ] `lib/api.ts` — `apiFetch` wrapper injects `X-CSRF-Token` header on POST/PUT/PATCH/DELETE
-- [ ] All tests passing
+- [x] `lib/csrf.ts` — `getCsrfToken()` reads `CSRF_TOKEN` cookie
+- [x] `lib/api.ts` — `apiFetch` wrapper injects `X-CSRF-Token` header on POST/PUT/PATCH/DELETE
+- [x] All tests passing
 
 ### Quality Gates
 
-- [ ] Unit tests: `CsrfTokenService` (generate, validate, reject tampered/expired)
-- [ ] Unit tests: `OriginValidationFilter` (allowlist, reject malicious origin, fail-open)
-- [ ] Unit tests: `CsrfValidationFilter` (skip public, reject missing header, reject mismatch)
-- [ ] Integration test: login sets CSRF cookie, logout clears it
-- [ ] Frontend tests: `getCsrfToken`, `apiFetch` header injection
-- [ ] Zero lint/typecheck errors
-- [ ] `./mvnw test` passes
-- [ ] `npm run lint && npm run typecheck && npm test` passes
+- [x] Unit tests: `CsrfTokenService` (generate, validate, reject tampered/expired)
+- [x] Unit tests: `OriginValidationFilter` (allowlist, reject malicious origin, fail-open)
+- [x] Unit tests: `CsrfValidationFilter` (skip public, reject missing header, reject mismatch)
+- [x] Integration test: login sets CSRF cookie, logout clears it
+- [x] Frontend tests: `getCsrfToken`, `apiFetch` header injection
+- [x] Zero lint/typecheck errors
+- [x] `./mvnw test` passes
+- [x] `npm run lint && npm run typecheck && npm test` passes
 
 ---
 
@@ -176,12 +176,39 @@
 
 ## Definition of Done
 
-- [ ] All acceptance criteria met
-- [ ] All tests passing
-- [ ] Zero lint/typecheck errors
+- [ ] All acceptance criteria met (OAuth2 success CSRF cookie emission without test)
+- [x] All tests passing
+- [x] Zero lint/typecheck errors
 - [ ] Code reviewed by @qa
 
 ---
+
+## File List
+
+### Backend (main)
+- `apps/backend/src/main/java/com/felipemelozx/kairos/security/csrf/CsrfTokenService.java`
+- `apps/backend/src/main/java/com/felipemelozx/kairos/security/filters/OriginValidationFilter.java`
+- `apps/backend/src/main/java/com/felipemelozx/kairos/security/filters/CsrfValidationFilter.java`
+- `apps/backend/src/main/java/com/felipemelozx/kairos/security/CookieUtils.java` (CSRF cookie methods)
+- `apps/backend/src/main/java/com/felipemelozx/kairos/config/SecurityConfig.java` (filters + CORS)
+- `apps/backend/src/main/java/com/felipemelozx/kairos/controller/AuthController.java` (CSRF cookie emission)
+- `apps/backend/src/main/java/com/felipemelozx/kairos/security/oauth2/OAuth2AuthenticationSuccessHandler.java` (CSRF cookie emission)
+- `apps/backend/src/main/resources/application.yml` (`app.security.*`)
+
+### Backend (test)
+- `apps/backend/src/test/java/com/felipemelozx/kairos/security/csrf/CsrfTokenServiceTest.java`
+- `apps/backend/src/test/java/com/felipemelozx/kairos/security/filters/OriginValidationFilterTest.java`
+- `apps/backend/src/test/java/com/felipemelozx/kairos/security/filters/CsrfValidationFilterTest.java`
+- `apps/backend/src/test/java/com/felipemelozx/kairos/controller/AuthControllerIntegrationTest.java` (login/register/refresh/logout + 403s)
+
+### Frontend
+- `apps/frontend/src/lib/csrf.ts`
+- `apps/frontend/src/lib/api.ts`
+- `apps/frontend/src/lib/csrf.test.ts`
+- `apps/frontend/src/lib/api.test.ts`
+
+### Scripts
+- `scripts/start-backend.sh` (.env sourcing)
 
 ## Dependencies
 
@@ -204,3 +231,4 @@
 - `SameSite=Strict` on CSRF cookie provides additional protection
 - CORS configured with explicit allowlist (no wildcards with credentials)
 - Public auth routes (login/register/refresh) skip CSRF check but are protected by Origin check
+- Integration tests (task 1.5) exposed two `SecurityConfig` bugs, fixed in this story: `/auth/refresh` and `/error` were missing from `permitAll`, causing anonymous requests to be redirected to Google OAuth instead of returning 403/401/refreshing tokens
