@@ -1,0 +1,120 @@
+language: en-US
+
+early_access: false
+
+enable_auto_review: true
+
+enable_walkthrough: true
+
+auto_review:
+  enabled: true
+  auto_incremental_review: true
+  base_branches:
+    - main
+    - develop
+  ignore_title_keywords:
+    - "WIP"
+    - "draft"
+  drafts: false
+
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/.next/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/target/**"
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+  path_instructions:
+    - path: "apps/frontend/**"
+      instructions: |
+        Review TypeScript/React code for Next.js 14 best practices.
+        Check for: proper use of RSC vs client components, correct data fetching patterns,
+        absolute imports with @/ alias (no relative imports per Constitution Article VI),
+        proper error boundaries, and accessibility compliance.
+        Verify alignment with Turborepo build pipeline.
+    - path: "apps/backend/**"
+      instructions: |
+        Review Java 21 / Spring Boot code.
+        Check for: proper layering (controller/service/repository), exception handling,
+        security best practices, proper use of Spring annotations,
+        and alignment with Maven build pipeline.
+    - path: "packages/shared/**"
+      instructions: |
+        Review shared types and utilities.
+        Ensure no circular dependencies, proper TypeScript types,
+        and that changes don't break consuming apps (frontend/backend).
+    - path: ".aiox-core/**"
+      instructions: |
+        Review AIOX framework artifacts (agents, workflows, templates).
+        Ensure compliance with the Synkra AIOX Constitution (.aiox-core/constitution.md).
+        Verify agent authority boundaries (Article II) and story-driven development (Article III).
+    - path: ".github/agents/**"
+      instructions: |
+        Review GitHub agent definition files (*.agent.md).
+        Verify: proper agent persona definition, clear authority boundaries aligned with Constitution Article II,
+        correct tool assignments, no overlapping authorities between agents,
+        and that activation instructions are clear and actionable.
+        Ensure agents follow the naming convention and are listed in AGENTS.md activation table.
+    - path: ".aiox-core/development/agents/**"
+      instructions: |
+        Review AIOX agent definitions.
+        Verify compliance with Constitution Article II (Agent Authority - NON-NEGOTIABLE).
+        Check: exclusive authorities are properly scoped (e.g., only @devops can git push/create PRs),
+        agent personas are well-defined, activation instructions are clear,
+        and no agent oversteps its authority boundaries.
+        Ensure alignment with squad-first portability (Article XI).
+    - path: ".aiox-core/development/skills/**"
+      instructions: |
+        Review AIOX skill definitions and implementations.
+        Verify: skills are portable across IDEs (Claude, Codex, Gemini, Grok) per Article XI,
+        executable artifacts work regardless of runtime host,
+        skills follow the SKILL.md convention, and no runtime-specific logic is hardcoded.
+        Ensure skills don't contain squad-owned SOT logic outside of squads/ directory.
+    - path: ".agents/skills/**"
+      instructions: |
+        Review local skill definitions.
+        Verify: SKILL.md files are properly structured, instructions are clear and actionable,
+        skills are IDE-agnostic and portable across different AI coding assistants.
+        Check for proper frontmatter, resource references, and no hidden executable logic
+        that should live in squads/ per Article XI (Squad-First Portability).
+    - path: "docs/**"
+      instructions: |
+        Review documentation for accuracy and consistency.
+        Ensure stories follow the format in docs/stories/ and specs trace to requirements (Article IV).
+    - path: "infrastructure/**"
+      instructions: |
+        Review infrastructure-as-code changes carefully.
+        Check for security best practices, no exposed secrets, and proper configuration.
+    - path: "apps/backend/bruno/**/*.bru"
+      instructions: |
+        Review Bruno API request files (.bru).
+        Verify: requests use environment variables ({{baseUrl}}) instead of hardcoded URLs,
+        no credentials/secrets are exposed in request bodies (use environment variables),
+        proper HTTP methods and headers are used,
+        request naming follows REST conventions and matches backend API endpoints.
+        Check that authentication flows are properly documented and test data is realistic but safe.
+    - path: "apps/backend/bruno/environments/**"
+      instructions: |
+        Review Bruno environment configuration files.
+        Verify: environment variables are properly scoped (dev/staging/prod),
+        no sensitive credentials are hardcoded (use Bruno's secret management or env vars),
+        baseUrl and other variables follow naming conventions,
+        and environment-specific configurations are appropriate for each stage.
+        Ensure prod environment doesn't expose internal URLs or credentials.
+    - path: "apps/backend/bruno/bruno.json"
+      instructions: |
+        Review Bruno collection configuration.
+        Verify: collection name is descriptive, ignore patterns are appropriate,
+        and configuration follows Bruno best practices.
+
+chat:
+  auto_reply: true
