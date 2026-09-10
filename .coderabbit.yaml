@@ -2,21 +2,6 @@ language: en-US
 
 early_access: false
 
-enable_auto_review: true
-
-enable_walkthrough: true
-
-auto_review:
-  enabled: true
-  auto_incremental_review: true
-  base_branches:
-    - main
-    - develop
-  ignore_title_keywords:
-    - "WIP"
-    - "draft"
-  drafts: false
-
 reviews:
   profile: assertive
   request_changes_workflow: true
@@ -25,6 +10,16 @@ reviews:
   poem: false
   review_status: true
   collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    base_branches:
+      - main
+      - develop
+    ignore_title_keywords:
+      - "WIP"
+      - "draft"
+    drafts: false
   path_filters:
     - "!**/node_modules/**"
     - "!**/.next/**"
