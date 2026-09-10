@@ -10,6 +10,7 @@ public class CookieUtils {
 
     private static final String ACCESS_TOKEN_COOKIE = "ACCESS_TOKEN";
     private static final String REFRESH_TOKEN_COOKIE = "REFRESH_TOKEN";
+    private static final String CSRF_TOKEN_COOKIE = "CSRF_TOKEN";
 
     public static void addAccessTokenCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, token)
@@ -33,6 +34,17 @@ public class CookieUtils {
         response.addHeader("Set-Cookie", cookie.toString());
     }
 
+    public static void addCsrfTokenCookie(HttpServletResponse response, String token) {
+        ResponseCookie cookie = ResponseCookie.from(CSRF_TOKEN_COOKIE, token)
+            .httpOnly(false)
+            .secure(true)
+            .sameSite("Strict")
+            .path("/")
+            .maxAge(900)
+            .build();
+        response.addHeader("Set-Cookie", cookie.toString());
+    }
+
     public static void clearCookies(HttpServletResponse response) {
         ResponseCookie accessCookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, "")
             .httpOnly(true)
@@ -51,6 +63,15 @@ public class CookieUtils {
             .maxAge(0)
             .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());
+
+        ResponseCookie csrfCookie = ResponseCookie.from(CSRF_TOKEN_COOKIE, "")
+            .httpOnly(false)
+            .secure(true)
+            .sameSite("Strict")
+            .path("/")
+            .maxAge(0)
+            .build();
+        response.addHeader("Set-Cookie", csrfCookie.toString());
     }
 
     public static String getAccessTokenFromCookies(Cookie[] cookies) {

@@ -5,6 +5,7 @@ import com.felipemelozx.kairos.entity.User;
 import com.felipemelozx.kairos.entity.enums.AuthProvider;
 import com.felipemelozx.kairos.repository.UserRepository;
 import com.felipemelozx.kairos.security.CookieUtils;
+import com.felipemelozx.kairos.security.csrf.CsrfTokenService;
 import com.felipemelozx.kairos.security.jwt.JwtService;
 import com.felipemelozx.kairos.service.AuthService;
 import jakarta.servlet.ServletException;
@@ -23,10 +24,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final AuthService authService;
     private final JwtService jwtService;
+    private final CsrfTokenService csrfTokenService;
 
-    public OAuth2AuthenticationSuccessHandler(AuthService authService, JwtService jwtService) {
+    public OAuth2AuthenticationSuccessHandler(AuthService authService, JwtService jwtService,
+                                              CsrfTokenService csrfTokenService) {
         this.authService = authService;
         this.jwtService = jwtService;
+        this.csrfTokenService = csrfTokenService;
     }
 
     @Override
@@ -44,6 +48,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         CookieUtils.addAccessTokenCookie(response, accessToken);
         CookieUtils.addRefreshTokenCookie(response, refreshToken);
+        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
 
         getRedirectStrategy().sendRedirect(request, response, "/");
     }

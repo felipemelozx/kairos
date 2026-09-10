@@ -9,6 +9,7 @@ import com.felipemelozx.kairos.entity.User;
 import com.felipemelozx.kairos.exception.BusinessException;
 import com.felipemelozx.kairos.repository.UserRepository;
 import com.felipemelozx.kairos.security.CookieUtils;
+import com.felipemelozx.kairos.security.csrf.CsrfTokenService;
 import com.felipemelozx.kairos.security.jwt.JwtService;
 import com.felipemelozx.kairos.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,11 +28,14 @@ public class AuthController implements AuthApi {
     private final AuthService authService;
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final CsrfTokenService csrfTokenService;
 
-    public AuthController(AuthService authService, JwtService jwtService, UserRepository userRepository) {
+    public AuthController(AuthService authService, JwtService jwtService, UserRepository userRepository,
+                          CsrfTokenService csrfTokenService) {
         this.authService = authService;
         this.jwtService = jwtService;
         this.userRepository = userRepository;
+        this.csrfTokenService = csrfTokenService;
     }
 
     @Override
@@ -45,6 +49,7 @@ public class AuthController implements AuthApi {
         String refreshToken = jwtService.generateRefreshToken(userId);
         CookieUtils.addAccessTokenCookie(response, accessToken);
         CookieUtils.addRefreshTokenCookie(response, refreshToken);
+        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(user));
     }
@@ -60,6 +65,7 @@ public class AuthController implements AuthApi {
         String refreshToken = jwtService.generateRefreshToken(userId);
         CookieUtils.addAccessTokenCookie(response, accessToken);
         CookieUtils.addRefreshTokenCookie(response, refreshToken);
+        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
 
         return ResponseEntity.ok(ApiResponse.success(user));
     }
@@ -81,6 +87,7 @@ public class AuthController implements AuthApi {
         String userId = jwtService.getUserIdFromToken(refreshToken);
         String newAccessToken = jwtService.generateAccessToken(UUID.fromString(userId));
         CookieUtils.addAccessTokenCookie(response, newAccessToken);
+        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }

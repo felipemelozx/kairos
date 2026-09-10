@@ -10,11 +10,18 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID:dummy-client-id}
-            client-secret: ${GOOGLE_CLIENT_SECRET:dummy-client-secret}
+            client-id: ${GOOGLE_CLIENT_ID:client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:client-secret}
             scope: email, profile
 
 jwt:
   secret: ${JWT_SECRET:default-secret-change-in-production-min-256-bits-long-for-testing}
   access-token-expiration: 900000
   refresh-token-expiration: 604800000
+
+app:
+  security:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000}
+    csrf:
+      secret: ${CSRF_SECRET:default-csrf-secret-change-in-production-min-256-bits}
+      expiry-ms: 900000

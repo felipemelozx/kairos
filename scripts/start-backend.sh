@@ -70,4 +70,12 @@ if [ ! -z "$RESULT" ]; then
     fi
 fi
 
-cd apps/backend && ./mvnw spring-boot:run
+cd apps/backend
+
+if [ -f .env ]; then
+    set -a
+    source .env
+    set +a
+fi
+
+./mvnw spring-boot:run
