@@ -21,6 +21,7 @@ reviews:
       - "draft"
     drafts: false
   path_filters:
+    - "!**/.aiox-core/**"
     - "!**/node_modules/**"
     - "!**/.next/**"
     - "!**/dist/**"
@@ -47,11 +48,6 @@ reviews:
         Review shared types and utilities.
         Ensure no circular dependencies, proper TypeScript types,
         and that changes don't break consuming apps (frontend/backend).
-    - path: ".aiox-core/**"
-      instructions: |
-        Review AIOX framework artifacts (agents, workflows, templates).
-        Ensure compliance with the Synkra AIOX Constitution (.aiox-core/constitution.md).
-        Verify agent authority boundaries (Article II) and story-driven development (Article III).
     - path: ".github/agents/**"
       instructions: |
         Review GitHub agent definition files (*.agent.md).
@@ -59,21 +55,6 @@ reviews:
         correct tool assignments, no overlapping authorities between agents,
         and that activation instructions are clear and actionable.
         Ensure agents follow the naming convention and are listed in AGENTS.md activation table.
-    - path: ".aiox-core/development/agents/**"
-      instructions: |
-        Review AIOX agent definitions.
-        Verify compliance with Constitution Article II (Agent Authority - NON-NEGOTIABLE).
-        Check: exclusive authorities are properly scoped (e.g., only @devops can git push/create PRs),
-        agent personas are well-defined, activation instructions are clear,
-        and no agent oversteps its authority boundaries.
-        Ensure alignment with squad-first portability (Article XI).
-    - path: ".aiox-core/development/skills/**"
-      instructions: |
-        Review AIOX skill definitions and implementations.
-        Verify: skills are portable across IDEs (Claude, Codex, Gemini, Grok) per Article XI,
-        executable artifacts work regardless of runtime host,
-        skills follow the SKILL.md convention, and no runtime-specific logic is hardcoded.
-        Ensure skills don't contain squad-owned SOT logic outside of squads/ directory.
     - path: ".agents/skills/**"
       instructions: |
         Review local skill definitions.
