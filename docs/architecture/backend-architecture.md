@@ -2,18 +2,20 @@
 
 ## 1. Executive Summary
 
-**Kairos** is a time-centered productivity system built with a **Layered (N-tier) Architecture**. The backend provides a RESTful API for managing Projects, Tasks, TimeBlocks, and WorkSessions within a multi-tenant organization model.
+**Kairos** is a time-centered productivity system built with a **Layered (N-tier) Architecture**. The backend provides a RESTful API for managing Projects, TimeBlocks, ChecklistItems, and WorkSessions for a **single user** (owner-scoped).
 
 **Key Architectural Decisions:**
 
 | Decision | Rationale |
 |----------|-----------|
 | **Layered Architecture (controller/service/repository/entity)** | Pragmatic, widely understood structure; JPA entities used directly by services; less boilerplate |
-| **Multi-Tenant via Organizations** | B2B readiness, data isolation, future team collaboration |
+| **Single-user / Owner-scoped** | Personal productivity tool; no multi-tenancy, no organizations, no roles |
 | **Spring Boot 4.0.1 + Java 21** | Modern, enterprise-grade, excellent ecosystem |
 | **PostgreSQL + Flyway** | ACID compliance, complex queries, reliable migrations |
-| **Redis Caching** | Performance optimization for read-heavy operations |
-| **OAuth2 + JWT** | Stateless auth, Google integration, scalable |
+| **httpOnly Cookie Auth** | Secure token storage; CSRF protection; no client-side token handling |
+| **OAuth2 (Google) + Email/Password** | Flexible login; auto-create user on first Google login |
+| **Header-based API Versioning** | Clean URLs; version via `X-API-Version` header |
+| **OpenAPI / Swagger** | Machine-readable API contracts; auto-generated docs |
 
 ---
 
@@ -64,13 +66,13 @@ Controller → Service → Repository → Entity
 ### 2.3 Request Flow
 
 ```
-HTTP Request
+HTTP Request (httpOnly Cookie with JWT)
      │
      ▼
-Controller ──validates DTO (Bean Validation)──▶ Service ──▶ Repository ──▶ Database
-     ▲                                                 │
-     │                                                 └── returns JPA Entity
-     └── response DTO mapped from entity ◀─────────────────┘
+JwtCookieFilter ──extracts userId──▶ Controller ──validates DTO──▶ Service ──▶ Repository ──▶ Database
+                                                                  ▲                    │
+                                                                  │                    └── returns JPA Entity
+                                                                  └── response DTO ◀───┘
 ```
 
 ---
@@ -82,61 +84,62 @@ Controller ──validates DTO (Bean Validation)──▶ Service ──▶ Repo
 ```
 com.felipemelozx.kairos
 ├── controller/                        # REST API controllers
+│   ├── AuthController.java
 │   ├── ProjectController.java
-│   ├── TaskController.java
 │   ├── TimeBlockController.java
+│   ├── TimeBlockSeriesController.java
+│   ├── ChecklistItemController.java
 │   ├── WorkSessionController.java
-│   ├── OrganizationController.java
-│   └── AuthController.java
+│   └── MetricsController.java
 ├── service/                           # Business logic + transactions
+│   ├── AuthService.java
+│   ├── UserService.java
 │   ├── ProjectService.java
-│   ├── TaskService.java
 │   ├── TimeBlockService.java
+│   ├── TimeBlockSeriesService.java
+│   ├── ChecklistItemService.java
 │   ├── WorkSessionService.java
-│   ├── OrganizationService.java
-│   └── AuthService.java
+│   └── MetricsService.java
 ├── repository/                        # Spring Data JPA interfaces
 │   ├── UserRepository.java
-│   ├── OrganizationRepository.java
-│   ├── OrganizationMemberRepository.java
 │   ├── ProjectRepository.java
-│   ├── TaskRepository.java
 │   ├── TimeBlockRepository.java
+│   ├── TimeBlockSeriesRepository.java
+│   ├── ChecklistItemRepository.java
 │   └── WorkSessionRepository.java
 ├── entity/                            # JPA entities + enums
 │   ├── User.java
-│   ├── Organization.java
-│   ├── OrganizationMember.java
 │   ├── Project.java
-│   ├── Task.java
 │   ├── TimeBlock.java
+│   ├── TimeBlockSeries.java
+│   ├── ChecklistItem.java
 │   ├── WorkSession.java
 │   └── enums/
 │       ├── ProjectStatus.java
-│       ├── TaskStatus.java
-│       ├── OrganizationRole.java
-│       └── OrganizationStatus.java
+│       └── RecurrencePattern.java
 ├── dto/                               # Data Transfer Objects
 │   ├── request/
+│   │   ├── RegisterRequest.java
+│   │   ├── LoginRequest.java
 │   │   ├── CreateProjectRequest.java
-│   │   ├── UpdateTaskStatusRequest.java
-│   │   ├── CreateWorkSessionRequest.java
+│   │   ├── CreateTimeBlockRequest.java
 │   │   └── ...
 │   └── response/
-│       ├── ProjectResponse.java
-│       ├── TaskResponse.java
 │       ├── AuthResponse.java
+│       ├── UserResponse.java
+│       ├── ProjectResponse.java
 │       └── ...
-├── security/                          # JWT, OAuth2, current user
+├── security/                          # JWT, OAuth2, cookies
 │   ├── jwt/
 │   │   ├── JwtService.java
-│   │   └── JwtAuthenticationFilter.java
+│   │   └── JwtCookieAuthenticationFilter.java
 │   ├── oauth2/
 │   │   └── OAuth2AuthenticationSuccessHandler.java
+│   ├── CookieUtils.java
 │   └── UserPrincipal.java
 ├── config/                            # Bean / framework configuration
 │   ├── SecurityConfig.java
-│   ├── RedisConfig.java
+│   ├── OpenApiConfig.java
 │   ├── JacksonConfig.java
 │   └── ...
 ├── exception/                         # Global exception handling
@@ -152,10 +155,10 @@ com.felipemelozx.kairos
 | Layer | Responsibility | Example Members |
 |-------|----------------|-----------------|
 | **controller/** | HTTP handling, request validation (Bean Validation), response mapping | `ProjectController`, DTOs |
-| **service/** | Business rules, orchestration, transactions, org-scope checks | `TaskService`, `ProjectService` |
+| **service/** | Business rules, orchestration, transactions, owner-scoping | `ProjectService`, `TimeBlockService` |
 | **repository/** | Data access via Spring Data | `ProjectRepository`, `WorkSessionRepository` |
-| **entity/** | JPA mapping of tables/columns | `Project`, `Task`, `WorkSession` |
-| **config/** | Security, caching, serialization setup | `SecurityConfig` |
+| **entity/** | JPA mapping of tables/columns | `Project`, `TimeBlock`, `WorkSession` |
+| **config/** | Security, OpenAPI, serialization setup | `SecurityConfig`, `OpenApiConfig` |
 | **exception/** | Consistent error responses | `GlobalExceptionHandler` |
 
 ### 3.3 Where Business Rules Live
@@ -164,12 +167,13 @@ All rules from the PRD and Data Model are enforced in the **service layer**:
 
 | Business Rule | Enforced In |
 |---------------|-------------|
-| Task only becomes `DONE` if it has at least one `WorkSession` | `TaskService.markAsDone(...)` |
 | `endDateTime > startDateTime` for Time Blocks | `TimeBlockService.create(...)` |
-| `durationMinutes >= 1` for Work Sessions | `WorkSessionService.create(...)` |
-| Reserved project names / name length | `ProjectService` |
-| Soft-delete cascades (project → tasks) | `ProjectService.delete(...)` |
-| Organization membership before any access | Each service (org-scope check) |
+| Series materialize occurrences up to 12-month horizon | `TimeBlockSeriesService` |
+| Forward edit splits series (history immutable) | `TimeBlockSeriesService.update(...)` |
+| Per-occurrence override sets `isOverride = true` | `TimeBlockService.update(...)` |
+| Timer auto-stops at block end; creates WorkSession | `WorkSessionService` |
+| Work sessions are immutable once created | `WorkSessionService` |
+| Owner scoping: all queries filter by `userId` | Each service method |
 
 ---
 
@@ -187,8 +191,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "projects", indexes = {
-    @Index(name = "idx_projects_org_status", columnList = "organization_id, status"),
-    @Index(name = "idx_projects_org_deleted", columnList = "organization_id, deleted_at")
+    @Index(name = "idx_projects_user_active", columnList = "user_id, status")
 })
 public class Project {
 
@@ -196,8 +199,8 @@ public class Project {
     @GeneratedValue
     private UUID id;
 
-    @Column(name = "organization_id", nullable = false)
-    private UUID organizationId;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -219,7 +222,6 @@ public class Project {
     private Instant deletedAt;
 
     protected Project() {
-        // JPA
     }
 
     // Getters and setters...
@@ -239,16 +241,19 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
-    List<Project> findByOrganizationIdAndDeletedAtIsNull(UUID organizationId);
+    List<Project> findByUserIdAndDeletedAtIsNull(UUID userId);
+
+    Optional<Project> findByIdAndUserIdAndDeletedAtIsNull(UUID id, UUID userId);
 
     @Modifying
     @Query("UPDATE Project p SET p.deletedAt = :deletedAt " +
-           "WHERE p.id = :id AND p.deletedAt IS NULL")
-    void softDeleteById(@Param("id") UUID id, @Param("deletedAt") Instant deletedAt);
+           "WHERE p.id = :id AND p.userId = :userId AND p.deletedAt IS NULL")
+    void softDeleteByIdAndUserId(@Param("id") UUID id, @Param("userId") UUID userId, @Param("deletedAt") Instant deletedAt);
 }
 ```
 
@@ -262,7 +267,6 @@ import com.felipemelozx.kairos.dto.response.ProjectResponse;
 import com.felipemelozx.kairos.entity.Project;
 import com.felipemelozx.kairos.entity.enums.ProjectStatus;
 import com.felipemelozx.kairos.exception.BusinessException;
-import com.felipemelozx.kairos.repository.OrganizationMemberRepository;
 import com.felipemelozx.kairos.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -273,9 +277,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Business logic for Projects.
- */
 @Service
 public class ProjectService {
 
@@ -285,22 +286,18 @@ public class ProjectService {
             java.util.Set.of("all", "inbox", "today");
 
     private final ProjectRepository projectRepository;
-    private final OrganizationMemberRepository organizationMemberRepository;
 
-    public ProjectService(ProjectRepository projectRepository,
-                          OrganizationMemberRepository organizationMemberRepository) {
+    public ProjectService(ProjectRepository projectRepository) {
         this.projectRepository = projectRepository;
-        this.organizationMemberRepository = organizationMemberRepository;
     }
 
     @Transactional
-    public ProjectResponse create(UUID organizationId, UUID currentUserId, CreateProjectRequest request) {
-        assertMember(organizationId, currentUserId);
+    public ProjectResponse create(UUID currentUserId, CreateProjectRequest request) {
         validateName(request.name());
         validateColor(request.color());
 
         Project project = new Project();
-        project.setOrganizationId(organizationId);
+        project.setUserId(currentUserId);
         project.setName(request.name());
         project.setDescription(request.description());
         project.setColor(request.color());
@@ -308,25 +305,21 @@ public class ProjectService {
         project.setCreatedAt(Instant.now());
 
         Project saved = projectRepository.save(project);
-        log.info("Project created: id={}, organizationId={}", saved.getId(), organizationId);
+        log.info("Project created: id={}, userId={}", saved.getId(), currentUserId);
         return ProjectResponse.from(saved);
     }
 
     @Transactional(readOnly = true)
-    public List<ProjectResponse> listByOrganization(UUID organizationId, UUID currentUserId) {
-        assertMember(organizationId, currentUserId);
-        return projectRepository.findByOrganizationIdAndDeletedAtIsNull(organizationId)
+    public List<ProjectResponse> listByUser(UUID currentUserId) {
+        return projectRepository.findByUserIdAndDeletedAtIsNull(currentUserId)
                 .stream()
                 .map(ProjectResponse::from)
                 .toList();
     }
 
     @Transactional
-    public void softDelete(UUID organizationId, UUID projectId, UUID currentUserId) {
-        assertMember(organizationId, currentUserId);
-        projectRepository.softDeleteById(projectId, Instant.now());
-        // Cascade: soft delete tasks belonging to this project (application level)
-        taskService.softDeleteByProjectId(projectId);
+    public void softDelete(UUID projectId, UUID currentUserId) {
+        projectRepository.softDeleteByIdAndUserId(projectId, currentUserId, Instant.now());
         log.info("Project soft deleted: id={}", projectId);
     }
 
@@ -346,12 +339,6 @@ public class ProjectService {
             throw new BusinessException("INVALID_COLOR", "Color must be a valid hex color (#RRGGBB)");
         }
     }
-
-    private void assertMember(UUID organizationId, UUID currentUserId) {
-        if (!organizationMemberRepository.existsByOrganizationIdAndUserId(organizationId, currentUserId)) {
-            throw new BusinessException("ACCESS_DENIED", "User is not a member of this organization");
-        }
-    }
 }
 ```
 
@@ -363,18 +350,20 @@ package com.felipemelozx.kairos.controller;
 import com.felipemelozx.kairos.dto.request.CreateProjectRequest;
 import com.felipemelozx.kairos.dto.response.ProjectResponse;
 import com.felipemelozx.kairos.service.ProjectService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/organizations/{organizationId}/projects")
+@RequestMapping("/api/projects")
+@SecurityRequirement(name = "cookieAuth")
 public class ProjectController {
 
     private final ProjectService projectService;
@@ -385,57 +374,22 @@ public class ProjectController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectResponse>> create(
-            @PathVariable UUID organizationId,
             @Valid @RequestBody CreateProjectRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal UserDetails principal) {
 
-        ProjectResponse response = projectService.create(
-                organizationId, jwt.getSubject(), request);
+        UUID userId = UUID.fromString(principal.getUsername());
+        ProjectResponse response = projectService.create(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ProjectResponse>>> list(
-            @PathVariable UUID organizationId,
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal UserDetails principal) {
 
-        List<ProjectResponse> projects = projectService.listByOrganization(
-                organizationId, jwt.getSubject());
+        UUID userId = UUID.fromString(principal.getUsername());
+        List<ProjectResponse> projects = projectService.listByUser(userId);
         return ResponseEntity.ok(ApiResponse.success(projects));
-    }
-}
-```
-
-### 4.5 Business Rule Example (Task Completion)
-
-```java
-package com.felipemelozx.kairos.service;
-
-@Service
-public class TaskService {
-
-    private final TaskRepository taskRepository;
-    private final WorkSessionRepository workSessionRepository;
-
-    @Transactional
-    public TaskResponse markAsDone(UUID organizationId, UUID taskId, UUID currentUserId) {
-        assertMember(organizationId, currentUserId);
-
-        Task task = taskRepository.findById(taskId)
-                .filter(t -> t.getOrganizationId().equals(organizationId))
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-
-        // Business rule: DONE requires at least one execution log
-        boolean hasExecution = workSessionRepository.existsByTaskIdAndDeletedAtIsNull(taskId);
-        if (!hasExecution) {
-            throw new BusinessException("TASK_COMPLETION_ERROR",
-                    "Task cannot be marked as DONE without an execution log");
-        }
-
-        task.setStatus(TaskStatus.DONE);
-        Task saved = taskRepository.save(task);
-        return TaskResponse.from(saved);
     }
 }
 ```
@@ -472,7 +426,7 @@ public record CreateProjectRequest(
 
 ### Level 2: Service Validation (Business Rules)
 
-Business and cross-field rules are enforced in the service before any mutation (see `4.3` and `4.5`).
+Business and cross-field rules are enforced in the service before any mutation (see `4.3`).
 
 > **Note:** `spring-boot-starter-validation` must be added to `pom.xml` for Bean Validation to work.
 
@@ -482,15 +436,15 @@ Business and cross-field rules are enforced in the service before any mutation (
 
 ### 6.1 Conventions
 
-- One JPA entity per table, named after the domain concept (e.g., `Task` ↔ `tasks`).
+- One JPA entity per table, named after the domain concept (e.g., `TimeBlock` ↔ `time_blocks`).
 - Enums stored as strings via `@Enumerated(EnumType.STRING)`.
 - Soft delete: entities expose a nullable `deletedAt`; repositories filter with `...AndDeletedAtIsNull`.
-- `work_sessions` uses **physical deletion** (no soft delete) for performance.
+- `work_sessions` uses **physical deletion** (no soft delete) — they are immutable records.
 - Indexes mirror `docs/diagrams/data-model.md` (including PostgreSQL partial indexes).
 
 ### 6.2 Soft-Delete Queries
 
-Spring Data derives filters from method names (`findByOrganizationIdAndDeletedAtIsNull`). For bulk soft delete use `@Modifying @Query` as shown in `4.2`. When partial indexes are required, define them in Flyway migrations and keep the `@Index`/`@Table` annotations aligned.
+Spring Data derives filters from method names (`findByUserIdAndDeletedAtIsNull`). For bulk soft delete use `@Modifying @Query`. When partial indexes are required, define them in Flyway migrations and keep the `@Index`/`@Table` annotations aligned.
 
 ### 6.3 Transaction Boundaries
 
@@ -500,49 +454,68 @@ Spring Data derives filters from method names (`findByOrganizationIdAndDeletedAt
 
 ## 7. API Design
 
-### 7.1 RESTful Conventions
+### 7.1 URL Convention (No Version in URL)
+
+URLs are clean and version-free. API versioning is handled via the `X-API-Version` request header.
 
 | Resource | URL Pattern | Methods |
 |----------|-------------|---------|
-| Projects | `/api/v1/organizations/{orgId}/projects` | GET, POST |
-| Project | `/api/v1/projects/{projectId}` | GET, PATCH, DELETE |
-| Tasks | `/api/v1/projects/{projectId}/tasks` | GET, POST |
-| Task | `/api/v1/tasks/{taskId}` | GET, PATCH, DELETE |
-| Time Blocks | `/api/v1/organizations/{orgId}/time-blocks` | GET, POST |
-| Time Block | `/api/v1/time-blocks/{blockId}` | GET, PATCH, DELETE |
-| Work Sessions | `/api/v1/organizations/{orgId}/work-sessions` | GET, POST |
-| Metrics | `/api/v1/organizations/{orgId}/metrics` | GET |
+| Auth (register) | `/api/auth/register` | POST |
+| Auth (login) | `/api/auth/login` | POST |
+| Auth (logout) | `/api/auth/logout` | POST |
+| Auth (refresh) | `/api/auth/refresh` | POST |
+| Auth (me) | `/api/auth/me` | GET |
+| Projects | `/api/projects` | GET, POST |
+| Project | `/api/projects/{projectId}` | GET, PATCH, DELETE |
+| Time Blocks | `/api/time-blocks` | GET, POST |
+| Time Block | `/api/time-blocks/{blockId}` | GET, PATCH, DELETE |
+| Time Block Series | `/api/time-block-series` | GET, POST |
+| Time Block Series | `/api/time-block-series/{seriesId}` | GET, PATCH, DELETE |
+| Checklist Items | `/api/time-blocks/{blockId}/checklist-items` | GET, POST |
+| Checklist Item | `/api/checklist-items/{itemId}` | PATCH, DELETE |
+| Work Sessions | `/api/work-sessions` | GET, POST |
+| Metrics | `/api/metrics` | GET |
 
-### 7.2 Response Envelope
+### 7.2 API Versioning (Header-Based)
+
+Version is communicated via the `X-API-Version` header. The server reads this header and routes accordingly. If absent, defaults to the latest version.
+
+```
+GET /api/projects
+X-API-Version: 1
+```
+
+```
+GET /api/projects
+X-API-Version: 2
+```
+
+Implementation: a `VersionFilter` or controller-level `@RequestMapping(headers = "X-API-Version=1")`.
+
+### 7.3 Response Envelope
 
 ```java
 package com.felipemelozx.kairos.controller;
 
 import java.time.Instant;
 
-/**
- * Standard API response envelope.
- */
 public record ApiResponse<T>(
         boolean success,
         T data,
         ErrorResponse error,
-        Instant timestamp,
-        String apiVersion
+        Instant timestamp
 ) {
-    private static final String API_VERSION = "1.0";
-
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, data, null, Instant.now(), API_VERSION);
+        return new ApiResponse<>(true, data, null, Instant.now());
     }
 
     public static <T> ApiResponse<T> error(ErrorResponse error) {
-        return new ApiResponse<>(false, null, error, Instant.now(), API_VERSION);
+        return new ApiResponse<>(false, null, error, Instant.now());
     }
 }
 ```
 
-### 7.3 Error Codes
+### 7.4 Error Codes
 
 | Code | HTTP Status | Description |
 |------|-------------|-------------|
@@ -550,13 +523,181 @@ public record ApiResponse<T>(
 | `BUSINESS_ERROR` | 400 | Business rule violation |
 | `NOT_FOUND` | 404 | Resource not found |
 | `ACCESS_DENIED` | 403 | User not authorized |
+| `UNAUTHORIZED` | 401 | Not authenticated or token expired |
 | `INTERNAL_ERROR` | 500 | Unexpected server error |
+
+### 7.5 OpenAPI / Swagger
+
+The API is documented via **springdoc-openapi** (OpenAPI 3.0). The spec is auto-generated from annotations and available at runtime.
+
+**Configuration:**
+
+```java
+package com.felipemelozx.kairos.config;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.In;
+import io.swagger.v3.oas.models.security.SecurityScheme.Type;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI kairosOpenAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("Kairos API")
+                        .description("Time-centered productivity system API")
+                        .version("1.0.0"))
+                .addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement()
+                        .addList("cookieAuth"))
+                .schemaRequirement("cookieAuth", new SecurityScheme()
+                        .type(Type.APIKEY)
+                        .in(In.COOKIE)
+                        .name("ACCESS_TOKEN"));
+    }
+}
+```
+
+**Endpoints:**
+
+| Path | Description |
+|------|-------------|
+| `/v3/api-docs` | OpenAPI JSON spec |
+| `/swagger-ui.html` | Interactive Swagger UI |
+
+**Dependency (pom.xml):**
+
+```xml
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.8.4</version>
+</dependency>
+```
 
 ---
 
-## 8. Cross-Cutting Concerns
+## 8. Security Architecture
 
-### 8.1 Exception Handling
+### 8.1 Authentication — httpOnly Cookie + JWT
+
+Tokens are stored in **httpOnly, Secure, SameSite=Strict cookies** — never exposed to JavaScript.
+
+| Cookie | Purpose | TTL | Flags |
+|--------|---------|-----|-------|
+| `ACCESS_TOKEN` | JWT access token | 15 minutes | httpOnly, Secure, SameSite=Strict, Path=/ |
+| `REFRESH_TOKEN` | JWT refresh token | 7 days | httpOnly, Secure, SameSite=Strict, Path=/api/auth/refresh |
+
+**Flow:**
+
+1. User authenticates (Google OAuth or email/password)
+2. Backend validates credentials, finds or creates `User`
+3. Backend generates JWT access token (15 min) + refresh token (7 days)
+4. Tokens set as httpOnly cookies in the response
+5. Subsequent requests automatically include cookies
+6. `JwtCookieAuthenticationFilter` extracts and validates the access token from the cookie
+7. On access token expiry, frontend calls `POST /api/auth/refresh` (refresh cookie auto-sent)
+8. On refresh token expiry, user must re-authenticate
+
+### 8.2 Login Methods
+
+#### Google OAuth2 (Auto-Create User)
+
+1. Frontend redirects to `/oauth2/authorization/google`
+2. User authenticates with Google
+3. Google redirects back to `/login/oauth2/code/google`
+4. `OAuth2AuthenticationSuccessHandler` extracts Google profile (email, name, avatar)
+5. `AuthService` finds existing user by email **or creates a new one automatically**
+6. JWT tokens set as httpOnly cookies
+7. Redirect to frontend (e.g., `/calendar`)
+
+#### Email + Password
+
+1. User registers via `POST /api/auth/register` with `{ email, password, name }`
+2. Password hashed with BCrypt before storage
+3. User logs in via `POST /api/auth/login` with `{ email, password }`
+4. `AuthService` validates credentials, generates JWT tokens
+5. Tokens set as httpOnly cookies
+
+### 8.3 Authorization (Owner Scoping)
+
+**Model: service-layer discipline, enforced by structure and tests.**
+
+1. **Repository convention (compile-time)**: repositories expose scoped methods only — e.g., `findByIdAndUserId(id, userId)`. Unsafe unscoped methods (`findById`) are **not exposed**. Forgetting the user filter becomes a compile error, not a runtime bug.
+
+2. **Authorization tests (CI)**: every GET/PATCH/DELETE endpoint has a test asserting "user B cannot access user A's resource". Forgetting to write the test fails CI.
+
+3. All requests resolve the user from the JWT cookie; services pass the authenticated `userId` into every repository call.
+
+### 8.4 CSRF Protection
+
+Since cookies are httpOnly and SameSite=Strict, CSRF risk is mitigated. For additional safety:
+
+- `POST /api/auth/logout` invalidates the refresh token server-side (token blacklist or short TTL)
+- `SameSite=Strict` prevents cross-site cookie sending
+
+### 8.5 SecurityConfig Example
+
+```java
+package com.felipemelozx.kairos.config;
+
+import com.felipemelozx.kairos.security.jwt.JwtCookieAuthenticationFilter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    private final JwtCookieAuthenticationFilter jwtCookieFilter;
+
+    public SecurityConfig(JwtCookieAuthenticationFilter jwtCookieFilter) {
+        this.jwtCookieFilter = jwtCookieFilter;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/api/auth/login",
+                    "/api/auth/register",
+                    "/oauth2/**",
+                    "/login/oauth2/**",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/actuator/health"
+                ).permitAll()
+                .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(oauth2SuccessHandler())
+            )
+            .addFilterBefore(jwtCookieFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}
+```
+
+---
+
+## 9. Cross-Cutting Concerns
+
+### 9.1 Exception Handling
 
 ```java
 package com.felipemelozx.kairos.exception;
@@ -607,80 +748,23 @@ public class GlobalExceptionHandler {
 }
 ```
 
-### 8.2 Logging Strategy
+### 9.2 Logging Strategy
 
 Use SLF4J consistently. Every service method logs an **entry summary** and an **exit summary** at `INFO`, and business decisions at `DEBUG`. Never log tokens, passwords, or secrets.
 
 ---
 
-## 9. Caching Strategy (Service Level)
-
-Caching annotations are applied at the **service layer** so cache keys align with business methods.
-
-```java
-@Service
-public class ProjectService {
-
-    @Cacheable(value = "projects", key = "#id")
-    @Transactional(readOnly = true)
-    public ProjectResponse getById(UUID organizationId, UUID id, UUID currentUserId) {
-        assertMember(organizationId, currentUserId);
-        Project project = projectRepository.findById(id)
-                .filter(p -> p.getOrganizationId().equals(organizationId))
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
-        return ProjectResponse.from(project);
-    }
-
-    @CacheEvict(value = "projects", key = "#projectId")
-    @Transactional
-    public void softDelete(UUID organizationId, UUID projectId, UUID currentUserId) {
-        // ...
-    }
-}
-```
-
-| Data Type | TTL | Eviction Strategy |
-|-----------|-----|-------------------|
-| Project by ID | 1 hour | Time-based |
-| User profile | 30 minutes | Time-based |
-| Organization members | 15 minutes | Write-through |
-| Task lists | 5 minutes | Aggressive (frequent updates) |
-
----
-
-## 10. Security Architecture
-
-### 10.1 Authentication Flow
-
-1. Frontend redirects to `/oauth2/authorization/google`
-2. User authenticates with Google
-3. Google redirects back to `/login/oauth2/code/google`
-4. `AuthService` finds or creates the `User` record
-5. Backend generates JWT tokens: **Access 15 min**, **Refresh 7 days**
-6. Tokens returned in JSON response
-
-### 10.2 Organization Scope Validation
-
-Every mutating request must include `organizationId`. Services validate membership before touching data:
-
-1. JWT contains a valid user
-2. User is a member of the organization (`OrganizationMemberRepository`)
-3. User has the required role (OWNER/ADMIN/MEMBER) when applicable
-
----
-
-## 11. Migration Strategy (Flyway)
+## 10. Migration Strategy (Flyway)
 
 ```
 src/main/resources/db/migration/
 ├── V1__Create_users.sql
-├── V2__Create_organizations.sql
-├── V3__Create_organization_members.sql
-├── V4__Create_projects.sql
-├── V5__Create_tasks.sql
-├── V6__Create_time_blocks.sql
-├── V7__Create_work_sessions.sql
-└── V8__Create_performance_indexes.sql
+├── V2__Create_projects.sql
+├── V3__Create_time_block_series.sql
+├── V4__Create_time_blocks.sql
+├── V5__Create_checklist_items.sql
+├── V6__Create_work_sessions.sql
+└── V7__Create_performance_indexes.sql
 ```
 
 Rules:
@@ -692,9 +776,9 @@ Rules:
 
 ---
 
-## 12. Testing Strategy
+## 11. Testing Strategy
 
-### 12.1 Test Pyramid
+### 11.1 Test Pyramid
 
 ```
                     ┌──────┐
@@ -706,14 +790,13 @@ Rules:
                     └──────┘
 ```
 
-### 12.2 Unit Test (Service + Mock Repository)
+### 11.2 Unit Test (Service + Mock Repository)
 
 ```java
 package com.felipemelozx.kairos.service;
 
 import com.felipemelozx.kairos.dto.request.CreateProjectRequest;
 import com.felipemelozx.kairos.exception.BusinessException;
-import com.felipemelozx.kairos.repository.OrganizationMemberRepository;
 import com.felipemelozx.kairos.repository.ProjectRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -732,22 +815,16 @@ class ProjectServiceTest {
 
     @Mock
     private ProjectRepository projectRepository;
-    @Mock
-    private OrganizationMemberRepository organizationMemberRepository;
 
     @InjectMocks
     private ProjectService projectService;
 
     @Test
     void shouldRejectReservedProjectName() {
-        UUID orgId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        when(organizationMemberRepository.existsByOrganizationIdAndUserId(orgId, userId))
-                .thenReturn(true);
-
         CreateProjectRequest request = new CreateProjectRequest("inbox", null, "#3B82F6");
 
-        assertThatThrownBy(() -> projectService.create(orgId, userId, request))
+        assertThatThrownBy(() -> projectService.create(userId, request))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("reserved");
 
@@ -756,7 +833,7 @@ class ProjectServiceTest {
 }
 ```
 
-### 12.3 Integration Test (Repository + Testcontainers)
+### 11.3 Integration Test (Repository + Testcontainers)
 
 ```java
 package com.felipemelozx.kairos.repository;
@@ -798,11 +875,10 @@ class ProjectRepositoryIntegrationTest {
     private ProjectRepository projectRepository;
 
     @Test
-    void shouldSaveAndFindActiveProjectByOrganization() {
-        UUID orgId = UUID.randomUUID();
+    void shouldSaveAndFindActiveProjectByUser() {
+        UUID userId = UUID.randomUUID();
         Project project = new Project();
-        project.setId(UUID.randomUUID());
-        project.setOrganizationId(orgId);
+        project.setUserId(userId);
         project.setName("Study English");
         project.setColor("#3B82F6");
         project.setStatus(ProjectStatus.ACTIVE);
@@ -810,74 +886,79 @@ class ProjectRepositoryIntegrationTest {
 
         projectRepository.save(project);
 
-        List<Project> result = projectRepository.findByOrganizationIdAndDeletedAtIsNull(orgId);
+        List<Project> result = projectRepository.findByUserIdAndDeletedAtIsNull(userId);
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Study English");
     }
 }
 ```
 
-### 12.4 Coverage
+### 11.4 Authorization Tests
+
+Every endpoint must have a test verifying owner scoping:
+
+```java
+@Test
+void shouldForbidAccessToOtherUsersProject() {
+    UUID userA = UUID.randomUUID();
+    UUID userB = UUID.randomUUID();
+    Project project = createProjectForUser(userA);
+
+    assertThatThrownBy(() -> projectService.getById(project.getId(), userB))
+            .isInstanceOf(ResourceNotFoundException.class);
+}
+```
+
+### 11.5 Coverage
 
 - Target: 80%+ (JaCoCo).
 - Changes must never reduce overall coverage.
 
 ---
 
-## 13. Deployment Architecture
+## 12. Deployment Architecture
 
-### 13.1 Docker Compose (Development)
+### 12.1 Docker Compose (Development)
 
 Defined in the repository root `docker-compose.yml`:
 
 | Service | Image | Port |
 |---------|-------|------|
 | postgres | `postgres:16.8-alpine` | 5432 |
-| redis | `redis:7-alpine` | 6379 |
-| backend | build from `apps/backend` (Dockerfile in `infrastructure/docker/`) | 8080 |
+| backend | build from `apps/backend` | 8080 |
 
-### 13.2 Production Infrastructure
+### 12.2 Production Infrastructure
+
+Single VPS with Docker Compose:
 
 ```
 ┌─────────────────────────────────────────┐
-│          Nginx / Cloud LB               │
+│              Nginx                       │
 │         (SSL Termination)               │
-└────────────────────┬────────────────────┘
-                     │
-┌────────────────────▼────────────────────┐
-│        Kairos Backend (x2 instances)    │
-│      (Blue-Green Deployment)            │
 └────────────────────┬────────────────────┘
                      │
         ┌────────────┴────────────┐
         │                         │
 ┌───────▼────────┐      ┌────────▼────────┐
-│   PostgreSQL   │      │     Redis       │
-│   (Primary)    │      │    (Cache)      │
+│   Kairos       │      │   PostgreSQL    │
+│   Backend      │      │                 │
 └────────────────┘      └─────────────────┘
-        │
-┌───────▼────────┐
-│   PostgreSQL   │
-│   (Replica)    │
-└────────────────┘
 ```
 
-### 13.3 Environment Configuration
+### 12.3 Environment Configuration
 
-| Environment | Profile | Database | Cache | Deployment |
-|-------------|---------|----------|-------|------------|
-| Development | `dev` | Docker Compose | Docker Compose | Local |
-| Staging | `staging` | Cloud PostgreSQL | Cloud Redis | GitHub Actions |
-| Production | `prod` | VPS PostgreSQL | VPS Redis | GitHub Actions |
+| Environment | Profile | Database | Deployment |
+|-------------|---------|----------|------------|
+| Development | `dev` | Docker Compose | Local |
+| Production | `prod` | VPS PostgreSQL | VPS Docker Compose |
 
 ---
 
-## 14. Observability
+## 13. Observability
 
-### 14.1 Health Checks
+### 13.1 Health Checks
 
 ```yaml
-# application.yml
 management:
   endpoints:
     web:
@@ -885,8 +966,6 @@ management:
         include: health,info,metrics,prometheus
   health:
     db:
-      enabled: true
-    redis:
       enabled: true
     readiness-state:
       enabled: true
@@ -896,17 +975,16 @@ management:
 
 > **Note:** requires `spring-boot-starter-actuator`.
 
-### 14.2 Metrics
+### 13.2 Metrics
 
-- **Logging**: Structured JSON logs (SLF4J + MDC with `requestId`, `userId`, `organizationId`).
-- **Metrics**: Micrometer counters/timers around service methods (e.g., `project.created`, `task.completion.duration`).
-- **Tracing**: OpenTelemetry (future).
+- **Logging**: Structured JSON logs (SLF4J + MDC with `requestId`, `userId`).
+- **Metrics**: Micrometer counters/timers around service methods.
 
 ---
 
-## 15. Development Workflow
+## 14. Development Workflow
 
-### 15.1 Git Workflow
+### 14.1 Git Workflow
 
 ```
 main (production)
@@ -916,98 +994,119 @@ develop (integration)
 feature/xxx (branch from develop)
 ```
 
-### 15.2 Conventional Commits
+### 14.2 Conventional Commits
 
 ```
 feat: add project creation endpoint
-fix: resolve task completion validation error
+fix: resolve time block validation error
 docs: update backend architecture documentation
-refactor: move business rule to ProjectService
+refactor: move business rule to TimeBlockService
 test: add integration tests for work sessions
 chore: upgrade Spring Boot to 4.0.1
 ```
 
-### 15.3 Code Review Checklist
+### 14.3 Code Review Checklist
 
 - [ ] Follows layered architecture (no business logic in controllers/repositories)
 - [ ] Business rules live in the service layer
-- [ ] Tests included (unit + integration)
+- [ ] All repository methods are owner-scoped (include `userId`)
+- [ ] Tests included (unit + integration + authorization)
 - [ ] No security vulnerabilities
 - [ ] Logging added for service methods
-- [ ] Performance impact assessed
-- [ ] Documentation updated
+- [ ] OpenAPI annotations added for new endpoints
 
 ---
 
-## 16. Architecture Decision Records (ADRs)
+## 15. Architecture Decision Records (ADRs)
 
 ### ADR-001: Layered Architecture (Supersedes Clean/Hexagonal)
 
 **Status:** Accepted — **2026**
 
-**Context:** Need maintainable, testable backend for long-term product evolution. The previous Clean/Hexagonal approach (framework-agnostic `core/` + `infrastructure/`, gateways, use cases) was considered but added boilerplate (gateways, mappers, duplicated entities) without proportional benefit for a single-module Spring Boot service.
+**Context:** Need maintainable, testable backend for long-term product evolution. The previous Clean/Hexagonal approach added boilerplate without proportional benefit for a single-module Spring Boot service.
 
-**Decision:** Implement a classic **Layered Architecture**: `controller → service → repository → entity`. Business rules live in services; JPA entities are used directly; DTOs only at the HTTP edges.
-
-**Consequences:**
-- ✅ Less boilerplate (no gateway interfaces, no duplicated domain/JPA entities)
-- ✅ Simpler to onboard new developers
-- ✅ Spring idioms used naturally (`@Service`, `@Transactional`, Spring Data)
-- ❌ Entities carry JPA coupling (harder to reuse outside Spring)
-- ❌ Business rules can leak into controllers if not disciplined — enforced by review checklist
-- 🔁 This ADR **supersedes** the former Clean Architecture ADR
-
-### ADR-002: Multi-Tenancy via Organizations
-
-**Status:** Accepted
-
-**Context:** Product vision includes B2B/future team collaboration.
-
-**Decision:** All data scoped to Organizations; users can belong to multiple orgs.
+**Decision:** Implement a classic **Layered Architecture**: `controller → service → repository → entity`.
 
 **Consequences:**
-- ✅ Ready for B2B features
-- ✅ Data isolation between organizations
-- ❌ More complex queries (always filter by organizationId)
-- ❌ Larger foreign key overhead
+- ✅ Less boilerplate
+- ✅ Simpler to onboard
+- ✅ Spring idioms used naturally
+- ❌ Entities carry JPA coupling
 
-### ADR-003: JWT Stateless Authentication
+### ADR-002: Single-User / Owner-Scoped (Supersedes Multi-Tenancy)
 
-**Status:** Accepted
+**Status:** Accepted — **2026**
 
-**Context:** Need scalable auth without server-side sessions.
+**Context:** PRD defines Kairos as a personal productivity tool. No multi-tenancy, no organizations, no team collaboration in MVP.
 
-**Decision:** OAuth2 + JWT tokens with short-lived access + long-lived refresh tokens.
+**Decision:** All data scoped to a single `userId`. No Organization entity. Every repository method includes `userId` for owner scoping.
 
 **Consequences:**
-- ✅ Stateless (horizontal scaling)
-- ✅ Mobile-friendly
-- ❌ Token revocation is complex
-- ❌ Requires secure token storage on client
+- ✅ Simpler queries (no org joins)
+- ✅ Faster development
+- ✅ Matches PRD exactly
+- ❌ Would require significant rework if multi-tenancy is needed later
+
+### ADR-003: httpOnly Cookie Auth (Supersedes Token-in-Body)
+
+**Status:** Accepted — **2026**
+
+**Context:** JWT tokens need secure storage. localStorage is vulnerable to XSS. httpOnly cookies are the most secure option for web apps.
+
+**Decision:** Access and refresh tokens stored in httpOnly, Secure, SameSite=Strict cookies. Frontend never accesses tokens directly.
+
+**Consequences:**
+- ✅ Immune to XSS token theft
+- ✅ Automatic cookie sending (no interceptor needed)
+- ❌ Requires CSRF consideration (mitigated by SameSite=Strict)
+- ❌ Slightly more complex logout (server-side token invalidation)
+
+### ADR-004: Header-Based API Versioning
+
+**Status:** Accepted — **2026**
+
+**Context:** API versioning via URL path (`/v1/...`) pollutes URLs and creates maintenance burden.
+
+**Decision:** Use `X-API-Version` header for versioning. URLs remain clean (`/api/projects`). Default to latest version if header absent.
+
+**Consequences:**
+- ✅ Clean URLs
+- ✅ Easy to test (header vs path)
+- ❌ Less discoverable than URL versioning
+- ❌ Requires documentation of versioning strategy
+
+### ADR-005: OpenAPI / Swagger Documentation
+
+**Status:** Accepted — **2026**
+
+**Context:** Need machine-readable API contracts for frontend integration and documentation.
+
+**Decision:** Use `springdoc-openapi` to auto-generate OpenAPI 3.0 spec from annotations. Swagger UI available at `/swagger-ui.html`.
+
+**Consequences:**
+- ✅ Auto-generated docs (always in sync with code)
+- ✅ Frontend can generate client types from spec
+- ✅ Interactive testing via Swagger UI
+- ❌ Requires annotations on all endpoints
 
 ---
 
-## 17. Future Considerations
+## 16. Future Considerations
 
-### 17.1 Scalability
+### 16.1 Scalability
 
 - **Read Replicas:** Offload read queries to PostgreSQL replicas
 - **CQRS:** Separate read/write models for complex queries
-- **Event Sourcing:** Audit log + event replay capability
-- **Microservices:** Extract bounded contexts (e.g., Auth Service)
 
-### 17.2 Performance
+### 16.2 Performance
 
-- **Database Sharding:** Distribute large datasets by organizationId
-- **GraphQL:** Flexible queries for complex frontend needs
-- **WebSocket:** Real-time updates for task status changes
-- **Async Processing:** Background jobs for email notifications, reports
+- **WebSocket:** Real-time updates for timer state
+- **Async Processing:** Background jobs for recurrence roll-forward
 
-### 17.3 Security
+### 16.3 Security
 
-- **Rate Limiting:** Prevent abuse at organization level
+- **Rate Limiting:** Prevent brute-force login attempts
 - **Audit Logging:** Track all data mutations
-- **PII Encryption:** Encrypt sensitive data at rest
 - **Multi-Factor Auth:** Optional 2FA for enhanced security
 
 ---
@@ -1023,8 +1122,8 @@ chore: upgrade Spring Boot to 4.0.1
 | Query the database | `repository/` |
 | Map a table | `entity/` |
 | Create a request/response object | `dto/request/` or `dto/response/` |
-| Add JWT/OAuth2 logic | `security/` |
-| Configure security/caching | `config/` |
+| Add JWT/Cookie logic | `security/` |
+| Configure security/OpenAPI | `config/` |
 | Add a custom error | `exception/` |
 
 ### Common Commands
@@ -1044,16 +1143,29 @@ chore: upgrade Spring Boot to 4.0.1
 
 # Check test coverage
 ./mvnw jacoco:report
+
+# View OpenAPI spec
+open http://localhost:8080/v3/api-docs
+
+# View Swagger UI
+open http://localhost:8080/swagger-ui.html
 ```
 
 ---
 
-**Document Version:** 2.0
-**Last Updated:** 2026-09-08
-**Status:** Accepted — Layered Architecture (controller/service/repository/entity)
+**Document Version:** 3.0
+**Last Updated:** 2026-09-09
+**Status:** Accepted — Layered Architecture, Single-User, httpOnly Cookie Auth, Header Versioning, OpenAPI
 **Changes:**
-- Replaced Clean/Hexagonal (core/infrastructure, gateways, use cases) with Layered Architecture
-- JPA entities used directly by services; DTOs only at HTTP edges
-- Business rules moved to the service layer
-- Removed duplicated domain/JPA entity and gateway/mapper boilerplate
-- ADR-001 superseded: Clean/Hexagonal → Layered
+- Aligned with PRD: single-user, no organizations, no multi-tenancy
+- Auth: httpOnly cookies (access + refresh), Google OAuth + email/password
+- Auto-create user on first Google login
+- Header-based API versioning (`X-API-Version`) instead of URL path
+- Added OpenAPI/Swagger documentation (springdoc-openapi)
+- Removed Redis caching (not needed for MVP single-user)
+- Removed Organization/OrganizationMember entities and related code
+- Updated all code examples to reflect owner-scoped (userId) pattern
+- ADR-002 superseded: Multi-Tenancy → Single-User/Owner-Scoped
+- ADR-003 superseded: JWT-in-Body → httpOnly Cookie Auth
+- Added ADR-004: Header-Based API Versioning
+- Added ADR-005: OpenAPI/Swagger Documentation
