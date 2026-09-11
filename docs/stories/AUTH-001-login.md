@@ -14,6 +14,7 @@
 
 - [x] Entity `User` with fields: `id`, `email`, `passwordHash`, `name`, `avatarUrl`, `provider` (GOOGLE/LOCAL), `active`, `createdAt`
 - [x] Migration `V1__Create_users.sql` with unique constraint on `email`
+- [x] Email normalized (trim + lowercase) on register, login and Google OAuth so addresses differing only by case map to the same account
 - [x] `POST /api/auth/register` accepts `{ email, password, name }` and returns user with httpOnly cookies
 - [x] `POST /api/auth/login` accepts `{ email, password }` and returns user with httpOnly cookies
 - [x] `POST /api/auth/logout` clears both cookies
@@ -26,15 +27,15 @@
 
 ### Frontend
 
-- [ ] Landing page with "Login with Google" button
-- [ ] Landing page with "Login with Email" button (shows register/login forms)
-- [ ] Register form with fields: `email`, `password`, `name`
-- [ ] Login form with fields: `email`, `password`
-- [ ] Auth context (Zustand store) with `user` state and `login`, `register`, `logout` actions
-- [ ] API client configured with `credentials: 'include'` for cookies
-- [ ] Protected route middleware redirects to `/` if not authenticated
-- [ ] `GET /api/auth/me` called on app load to restore session
-- [ ] All tests passing (unit, integration)
+- [x] Landing page with "Login with Google" button
+- [x] Landing page with "Login with Email" button (shows register/login forms)
+- [x] Register form with fields: `email`, `password`, `name`
+- [x] Login form with fields: `email`, `password`
+- [x] Auth context (Zustand store) with `user` state and `login`, `register`, `logout` actions
+- [x] API client configured with `credentials: 'include'` for cookies
+- [x] Protected route middleware redirects to `/` if not authenticated
+- [x] `GET /api/auth/me` called on app load to restore session
+- [x] All tests passing (unit, integration)
 
 ### Quality Gates
 
@@ -390,4 +391,5 @@
 - OpenAPI spec must be defined before implementation
 - httpOnly cookies for security (no localStorage)
 - Google OAuth auto-creates user on first login
+- Emails are case-insensitive (`Example.com` == `example.com`) via `AuthService.normalizeEmail`
 - All endpoints must be owner-scoped (userId from JWT)

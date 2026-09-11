@@ -1,4 +1,4 @@
-import { apiFetch } from '../lib/api';
+import { apiFetch, ApiError } from '../lib/api';
 import { getCsrfToken } from '../lib/csrf';
 
 jest.mock('../lib/csrf');
@@ -117,6 +117,47 @@ describe('apiFetch', () => {
     } as Response);
 
     await expect(apiFetch('/api/test', { method: 'POST' })).rejects.toThrow('API error: 403');
+  });
+
+  it('should extract error message from response body', async () => {
+    mockGetCsrfToken.mockReturnValue('token');
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 401,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () =>
+        Promise.resolve({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'Invalid email or password' },
+        }),
+    } as Response);
+
+    const error = (await apiFetch('/api/auth/login', { method: 'POST' }).catch((e) => e)) as ApiError;
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe('Invalid email or password');
+    expect(error.status).toBe(401);
+    expect(error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('should expose ApiError type guard fields', async () => {
+    mockGetCsrfToken.mockReturnValue('token');
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 400,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () =>
+        Promise.resolve({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Request validation failed',
+            details: { email: 'Invalid email format' },
+          },
+        }),
+    } as Response);
+
+    const error = (await apiFetch('/api/auth/register', { method: 'POST' }).catch((e) => e)) as ApiError;
+    expect(error.details).toEqual({ email: 'Invalid email format' });
   });
 
   it('should use same-origin credentials', async () => {

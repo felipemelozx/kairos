@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -30,12 +31,13 @@ public class AuthService {
 
     @Transactional
     public UserResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
+        String email = normalizeEmail(request.email());
+        if (userRepository.existsByEmail(email)) {
             throw new BusinessException("EMAIL_EXISTS", "Email already registered");
         }
 
         User user = new User();
-        user.setEmail(request.email());
+        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setName(request.name());
         user.setProvider(AuthProvider.LOCAL);
@@ -48,7 +50,7 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public UserResponse login(LoginRequest request) {
-        User user = userRepository.findByEmailAndActiveIsTrue(request.email())
+        User user = userRepository.findByEmailAndActiveIsTrue(normalizeEmail(request.email()))
                 .orElseThrow(() -> new BusinessException("INVALID_CREDENTIALS", "Invalid email or password"));
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
@@ -60,14 +62,15 @@ public class AuthService {
 
     @Transactional
     public UserResponse findOrCreateGoogleUser(String email, String name, String picture) {
-        Optional<User> existingUser = userRepository.findByEmailAndActiveIsTrue(email);
+        String normalizedEmail = normalizeEmail(email);
+        Optional<User> existingUser = userRepository.findByEmailAndActiveIsTrue(normalizedEmail);
 
         if (existingUser.isPresent()) {
             return UserResponse.from(existingUser.get());
         }
 
         User user = new User();
-        user.setEmail(email);
+        user.setEmail(normalizedEmail);
         user.setName(name);
         user.setAvatarUrl(picture);
         user.setProvider(AuthProvider.GOOGLE);
@@ -76,5 +79,9 @@ public class AuthService {
 
         User saved = userRepository.save(user);
         return UserResponse.from(saved);
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

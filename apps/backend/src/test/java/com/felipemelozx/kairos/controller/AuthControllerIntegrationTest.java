@@ -163,6 +163,29 @@ class AuthControllerIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
+    @Test
+    void shouldRejectRegisterWhenEmailDiffersOnlyByCase() {
+        restTemplate.postForEntity("/auth/register",
+                new RegisterRequest("CaseTest@Example.com", "password123", "First"), ApiResponse.class);
+
+        RegisterRequest duplicate = new RegisterRequest("casetest@example.com", "password123", "Second");
+        ResponseEntity<ApiResponse> response = restTemplate.postForEntity("/auth/register", duplicate, ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void shouldLoginWhenEmailDiffersOnlyByCase() {
+        restTemplate.postForEntity("/auth/register",
+                new RegisterRequest("mixed@example.com", "password123", "Mixed Case"), ApiResponse.class);
+
+        ResponseEntity<ApiResponse> response = restTemplate.postForEntity("/auth/login",
+                new LoginRequest("MIXED@Example.COM", "password123"), ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(cookieValue(response, "ACCESS_TOKEN")).isNotBlank();
+    }
+
     private ResponseEntity<ApiResponse> registerAndLogin(String email, String password) {
         RegisterRequest register = new RegisterRequest(email, password, "Test User");
         restTemplate.postForEntity("/auth/register", register, ApiResponse.class);

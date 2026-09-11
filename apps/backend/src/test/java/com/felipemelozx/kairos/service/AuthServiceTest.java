@@ -119,6 +119,66 @@ class AuthServiceTest {
         verify(userRepository, never()).save(any(User.class));
     }
 
+    @Test
+    void shouldNormalizeEmailOnRegister() {
+        RegisterRequest request = new RegisterRequest("  New@Example.COM  ", "password123", "John");
+        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("password123")).thenReturn("hashedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(UUID.randomUUID());
+            u.setCreatedAt(Instant.now());
+            return u;
+        });
+
+        UserResponse result = authService.register(request);
+
+        assertThat(result.email()).isEqualTo("new@example.com");
+        verify(userRepository).existsByEmail("new@example.com");
+    }
+
+    @Test
+    void shouldRejectRegisterWhenEmailExistsWithDifferentCase() {
+        RegisterRequest request = new RegisterRequest("Example.com", "password123", "John");
+        when(userRepository.existsByEmail("example.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.register(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("already registered");
+
+        verify(userRepository).existsByEmail("example.com");
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void shouldNormalizeEmailOnLogin() {
+        User user = createUser("test@example.com", "hashedPassword", "Test");
+        when(userRepository.findByEmailAndActiveIsTrue("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("password123", "hashedPassword")).thenReturn(true);
+
+        UserResponse result = authService.login(
+                new com.felipemelozx.kairos.dto.request.LoginRequest("  TEST@Example.COM  ", "password123"));
+
+        assertThat(result.email()).isEqualTo("test@example.com");
+        verify(userRepository).findByEmailAndActiveIsTrue("test@example.com");
+    }
+
+    @Test
+    void shouldNormalizeEmailOnGoogleLogin() {
+        when(userRepository.findByEmailAndActiveIsTrue("google@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(UUID.randomUUID());
+            u.setCreatedAt(Instant.now());
+            return u;
+        });
+
+        UserResponse result = authService.findOrCreateGoogleUser("  Google@Example.COM  ", "Google User", "https://picture.url");
+
+        assertThat(result.email()).isEqualTo("google@example.com");
+        verify(userRepository).findByEmailAndActiveIsTrue("google@example.com");
+    }
+
     private User createUser(String email, String passwordHash, String name) {
         User user = new User();
         user.setId(UUID.randomUUID());

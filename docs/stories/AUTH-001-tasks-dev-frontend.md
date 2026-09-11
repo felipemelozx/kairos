@@ -753,8 +753,27 @@ describe('RootLayout', () => {
 
 ## Quality Gates
 
-- [ ] All unit tests passing
+- [x] All unit tests passing
 - [ ] 80%+ coverage
-- [ ] Zero lint errors (`npm run lint`)
-- [ ] Zero typecheck errors (`npm run typecheck`)
-- [ ] All components accessible (ARIA labels)
+- [x] Zero lint errors (`npm run lint`)
+- [x] Zero typecheck errors (`npm run typecheck`)
+- [x] All components accessible (ARIA labels)
+
+---
+
+## File List
+
+| File | Purpose |
+|------|---------|
+| `src/lib/api.ts` | API client (fetch, CSRF-aware, `ApiError`) |
+| `src/lib/csrf.ts` | CSRF token reader from cookie |
+| `src/lib/auth-api.ts` | Auth API functions (register/login/logout/refresh/me) |
+| `src/stores/auth-store.ts` | Zustand store (`user`, `login`, `register`, `logout`, `fetchMe`) |
+| `src/components/auth/LoginForm.tsx` | Email/password login form |
+| `src/components/auth/RegisterForm.tsx` | Register form with validation |
+| `src/components/auth/AuthProvider.tsx` | Calls `fetchMe` on app load |
+| `src/components/ProtectedRoute.tsx` | Redirects unauthenticated users to `/` |
+| `src/app/page.tsx` | Landing page with Google + Email login |
+| `src/app/layout.tsx` | Root layout wrapping children in `AuthProvider` |
+
+**Tests:** `src/lib/api.test.ts`, `src/lib/auth-api.test.ts`, `src/stores/auth-store.test.ts`, `src/components/auth/LoginForm.test.tsx`, `src/components/auth/RegisterForm.test.tsx`, `src/components/ProtectedRoute.test.tsx`, `src/app/page.test.tsx`, `src/app/layout.test.tsx`
