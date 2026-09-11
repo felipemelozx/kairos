@@ -20,8 +20,16 @@ jobs:
     name: Full scan (push / schedule)
     if: github.event_name != 'pull_request'
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0
+    with:
+      scan-args: |-
+        --lockfile=package-lock.json
+        --lockfile=apps/backend/pom.xml
 
   scan-pr:
     name: Scan new vulns (PR)
     if: github.event_name == 'pull_request'
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@v2.5.0
+    with:
+      scan-args: |-
+        --lockfile=package-lock.json
+        --lockfile=apps/backend/pom.xml
