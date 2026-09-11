@@ -89,6 +89,7 @@ Thumbs.db
 .codex/
 .gemini/
 .antigravity/
+.opencode/
 .idea/
 AGENTS.md
 .aios-core/
@@ -106,3 +107,16 @@ axios/
 
 ### Coverage ###
 coverage/
+
+# Environment & Secrets (AIOX)
+.env.*.local
+
+# Dependencies (AIOX)
+node_modules
+
+# AIOX Local (AIOX)
+.aiox-core/local/
+.aiox/install-log.txt
+
+# Design tooling (local artifacts)
+.impeccable/

@@ -13,19 +13,21 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "clean": "turbo run clean && rm -rf node_modules",
-    "backend:dev": "cd apps/backend && ./mvnw spring-boot:run",
+    "backend:dev": "./scripts/start-backend.sh",
     "backend:build": "cd apps/backend && ./mvnw clean package",
-    "frontend:dev": "cd apps/frontend && npm run dev",
+    "frontend:dev": "./scripts/start-frontend.sh",
     "frontend:build": "cd apps/frontend && npm run build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "docker:logs": "docker-compose logs -f",
+    "docker:databases": "docker-compose up -d postgres redis",
+    "docker:databases:down": "docker-compose stop postgres redis"
   },
   "devDependencies": {
-    "turbo": "^2.0.0"
+    "turbo": "^2.10.12"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.9.0",
     "npm": ">=9.0.0"
   },
   "repository": {

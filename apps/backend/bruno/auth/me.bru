@@ -1,0 +1,24 @@
+meta {
+  name: Get Current User
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/auth/me
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Get Current Authenticated User
+  
+  Returns the profile of the currently authenticated user.
+  
+  Requires valid ACCESS_TOKEN cookie.
+  Returns 401 if not authenticated.
+}

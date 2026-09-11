@@ -1,0 +1,368 @@
+openapi: 3.0.3
+info:
+  title: Kairos API
+  description: Time-centered productivity system API
+  version: 1.0.0
+  contact:
+    name: Kairos
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.kairos.app
+    description: Production server
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+
+security:
+  - cookieAuth: []
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Creates a new user account with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: user@example.com
+              password: securePassword123
+              name: John Doe
+      responses:
+        '201':
+          description: User registered successfully
+          headers:
+            Set-Cookie:
+              description: httpOnly cookies with access and refresh tokens
+              schema:
+                type: string
+                example: ACCESS_TOKEN=eyJhbGc...; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=900, REFRESH_TOKEN=eyJhbGc...; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh; Max-Age=604800
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed
+                  details:
+                    email: Invalid email format
+                    password: Password must be at least 8 characters
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: BUSINESS_ERROR
+                  message: Email already registered
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login with email and password
+      description: Authenticates user with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: user@example.com
+              password: securePassword123
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              description: httpOnly cookies with access and refresh tokens
+              schema:
+                type: string
+                example: ACCESS_TOKEN=eyJhbGc...; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=900, REFRESH_TOKEN=eyJhbGc...; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh; Max-Age=604800
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: UNAUTHORIZED
+                  message: Invalid email or password
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout current user
+      description: Clears authentication cookies
+      responses:
+        '200':
+          description: Logout successful
+          headers:
+            Set-Cookie:
+              description: Clears authentication cookies
+              schema:
+                type: string
+                example: ACCESS_TOKEN=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0, REFRESH_TOKEN=; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh; Max-Age=0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      description: Issues a new access token using the refresh token cookie
+      responses:
+        '200':
+          description: Token refreshed successfully
+          headers:
+            Set-Cookie:
+              description: New access token cookie
+              schema:
+                type: string
+                example: ACCESS_TOKEN=eyJhbGc...; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=900
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: UNAUTHORIZED
+                  message: Refresh token expired
+
+  /api/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get current authenticated user
+      description: Returns the profile of the currently authenticated user
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: UNAUTHORIZED
+                  message: Not authenticated
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: ACCESS_TOKEN
+      description: JWT access token stored in httpOnly cookie
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          description: User password (minimum 8 characters)
+          minLength: 8
+          example: securePassword123
+        name:
+          type: string
+          description: User full name
+          minLength: 1
+          maxLength: 100
+          example: John Doe
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          description: User password
+          example: securePassword123
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User unique identifier
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        name:
+          type: string
+          description: User full name
+          example: John Doe
+        avatarUrl:
+          type: string
+          format: uri
+          description: User avatar URL (optional)
+          nullable: true
+          example: https://lh3.googleusercontent.com/a/ACg8oc...
+        provider:
+          type: string
+          enum: [LOCAL, GOOGLE]
+          description: Authentication provider
+          example: LOCAL
+        active:
+          type: boolean
+          description: Whether the user account is active
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: '2026-09-09T10:00:00Z'
+
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/User'
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-09-09T10:00:00Z'
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/User'
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-09-09T10:00:00Z'
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-09-09T10:00:00Z'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          $ref: '#/components/schemas/Error'
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-09-09T10:00:00Z'
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          description: Error message
+          example: Request validation failed
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Field-level validation errors
+          nullable: true
+          example:
+            email: Invalid email format
+            password: Password must be at least 8 characters
