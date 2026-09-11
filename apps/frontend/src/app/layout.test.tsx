@@ -1,7 +1,30 @@
 import { render, screen } from '@testing-library/react';
 import RootLayout from './layout';
+import { useAuthStore } from '@/stores/auth-store';
+
+jest.mock('@/stores/auth-store');
+
+const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
 
 describe('RootLayout', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAuthStore.mockReturnValue({ fetchMe: jest.fn() });
+  });
+
+  it('should call fetchMe on mount', () => {
+    const mockFetchMe = jest.fn();
+    mockUseAuthStore.mockReturnValue({ fetchMe: mockFetchMe });
+
+    render(
+      <RootLayout>
+        <div>Test</div>
+      </RootLayout>
+    );
+
+    expect(mockFetchMe).toHaveBeenCalled();
+  });
+
   it('renders children correctly', () => {
     render(
       <RootLayout>
