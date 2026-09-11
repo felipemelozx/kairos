@@ -11,6 +11,7 @@ import com.felipemelozx.kairos.service.AuthService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -25,12 +26,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final AuthService authService;
     private final JwtService jwtService;
     private final CsrfTokenService csrfTokenService;
+    private final String frontendUrl;
 
     public OAuth2AuthenticationSuccessHandler(AuthService authService, JwtService jwtService,
-                                              CsrfTokenService csrfTokenService) {
+                                              CsrfTokenService csrfTokenService,
+                                              @Value("${app.frontend-url:http://localhost:3000}") String frontendUrl) {
         this.authService = authService;
         this.jwtService = jwtService;
         this.csrfTokenService = csrfTokenService;
+        this.frontendUrl = frontendUrl;
     }
 
     @Override
@@ -50,6 +54,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         CookieUtils.addRefreshTokenCookie(response, refreshToken);
         CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
 
-        getRedirectStrategy().sendRedirect(request, response, "/");
+        getRedirectStrategy().sendRedirect(request, response, frontendUrl + "/");
     }
 }
