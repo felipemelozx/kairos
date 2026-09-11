@@ -3,25 +3,58 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
+  --color-accent: #0f766e;
+  --color-accent-hover: #115e59;
+  --color-accent-active: #0a4f49;
+  --color-accent-subtle: #e6f4f2;
+  --color-accent-contrast: #ffffff;
+  --color-canvas: #fafaf9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f4f2;
+  --color-border: #e7e5e4;
+  --color-border-strong: #d6d3d1;
+  --color-ink: #0a0a0a;
+  --color-ink-secondary: #52525b;
+  --color-ink-muted: #a1a1aa;
+  --color-dark-block: #0b0b0c;
+  --color-success: #15803d;
+  --color-success-subtle: #dcfce7;
+  --color-warning: #b45309;
+  --color-warning-subtle: #fef3c7;
+  --color-danger: #b91c1c;
+  --color-danger-subtle: #fee2e2;
+  --color-info: #1d4ed8;
+  --color-info-subtle: #dbeafe;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  --font-display: 'Familjen Grotesk', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --font-body: 'Onest', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 80px;
+  --space-4xl: 120px;
+
+  --shadow-xs: 0 1px 2px rgba(10, 10, 10, 0.04);
+  --shadow-sm: 0 1px 3px rgba(10, 10, 10, 0.06), 0 1px 2px rgba(10, 10, 10, 0.04);
+  --shadow-md: 0 4px 12px rgba(10, 10, 10, 0.06), 0 2px 4px rgba(10, 10, 10, 0.04);
+  --shadow-lg: 0 12px 28px rgba(10, 10, 10, 0.1), 0 4px 8px rgba(10, 10, 10, 0.05);
+  --shadow-xl: 0 24px 48px -12px rgba(10, 10, 10, 0.18);
+  --shadow-focus: 0 0 0 3px rgba(15, 118, 110, 0.25);
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  color: var(--color-ink);
+  background-color: var(--color-canvas);
+  font-family: var(--font-body);
 }
