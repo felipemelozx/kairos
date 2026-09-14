@@ -112,7 +112,7 @@ THEN novo snapshot em .impeccable/critique/ com notas por heurística + severida
 | 2026-09-14 | 2 | Micro-fixes polish (ver File List) | 6 arquivos: globals.css (:focus-visible/:disabled), ProjectForm (placeholder AA + presets 40px + min-h + color-well ring), ProjectList/ProjectCard-confirm/DeleteDialog (min-h 40px inline-flex), page.tsx (card border + Logout 40px) |
 | 2026-09-14 | 3 | Re-critique projetos + home-logada | `.impeccable/critique/2026-09-14T12-30-00Z__ux-001-projects-homelogada.md` — 29/40 Good (baseline 21/40, +8, P1 zerados; gitignored, não commitado) |
 | 2026-09-14 | 4 | Gates lint/typecheck/test/build | lint 0, typecheck 0, test 19 suites/226 passed, build ok (/, /projects, /_not-found) |
-| 2026-09-14 | 5 | Push @devops | A registrar |
+| 2026-09-14 | 5 | Push @devops | Branch protection bloqueia push direto na main; branch `feat/ux-001-creem-persuade` + PR #7 https://github.com/felipemelozx/kairos/pull/7 (2 commits: fe754f0 backend PROJ-001, e25261e frontend PROJ-002/UX-001) |
 
 ---
 
@@ -160,5 +160,5 @@ THEN novo snapshot em .impeccable/critique/ com notas por heurística + severida
 - [x] Polish aplicado sem mudança de escopo
 - [x] Re-critique persistida com score vs 21/40 (29/40 Good, P1 zerados; .impeccable é gitignored)
 - [x] Gates verdes (frontend: lint/typecheck/test 19/226/build; backend: 87 testes BUILD SUCCESS)
-- [ ] Push feito só com arquivos intencionais (sem segredo) — em execução @devops
-- [ ] Temporários limpos (detect_*.json/txt no root)
+- [x] Push feito só com arquivos intencionais (sem segredo) — branch `feat/ux-001-creem-persuade`, PR #7 (push direto na main bloqueado por rule)
+- [x] Temporários limpos (detect_*.json/txt no root — nenhum encontrado)
