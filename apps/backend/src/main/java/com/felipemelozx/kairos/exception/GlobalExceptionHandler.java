@@ -17,7 +17,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
-        HttpStatus status = "EMAIL_EXISTS".equals(ex.getCode()) ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+        HttpStatus status;
+        if ("EMAIL_EXISTS".equals(ex.getCode())) {
+            status = HttpStatus.CONFLICT;
+        } else if ("NOT_FOUND".equals(ex.getCode())) {
+            status = HttpStatus.NOT_FOUND;
+        } else {
+            status = HttpStatus.BAD_REQUEST;
+        }
         return ResponseEntity.status(status).body(
                 ApiResponse.error(new ErrorResponse(ex.getCode(), ex.getMessage(), null)));
     }
