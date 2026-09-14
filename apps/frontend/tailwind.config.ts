@@ -86,6 +86,8 @@ const config: Config = {
         lg: '0 12px 28px rgba(10,10,10,.10), 0 4px 8px rgba(10,10,10,.05)',
         xl: '0 24px 48px -12px rgba(10,10,10,.18)',
         focus: '0 0 0 3px rgba(15,118,110,.25)',
+        hard: '4px 4px 0 rgba(11,11,12,.9)',
+        'hard-lg': '6px 6px 0 rgba(11,11,12,.9)',
       },
     },
   },

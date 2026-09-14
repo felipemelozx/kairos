@@ -58,3 +58,47 @@ body {
   background-color: var(--color-canvas);
   font-family: var(--font-body);
 }
+
+@layer components {
+  .btn-persuade {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    min-height: 52px;
+    padding: 1rem 1.75rem;
+    border-radius: 999px;
+    border: 2px solid #0b0b0c;
+    background-color: #0b0b0c;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    box-shadow: 4px 4px 0 rgba(11, 11, 12, 0.9);
+    transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+  }
+  .btn-persuade:hover {
+    background-color: #1a1a1c;
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 rgba(11, 11, 12, 0.9);
+  }
+  .btn-persuade:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 rgba(11, 11, 12, 0.9);
+  }
+  .btn-persuade:focus-visible {
+    outline: none;
+    box-shadow: 4px 4px 0 rgba(11, 11, 12, 0.9), 0 0 0 3px rgba(15, 118, 110, 0.25);
+  }
+  .btn-persuade:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+  }
+}
+
+@layer utilities {
+  .placeholder-readable::placeholder {
+    color: #52525b;
+    opacity: 1;
+  }
+}

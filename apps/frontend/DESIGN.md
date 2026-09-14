@@ -88,8 +88,22 @@ components:
     rounded: "{rounded.md}"
     padding: "10px 18px"
     height: "40px"
+  button-primary-pill:
+    backgroundColor: "{colors.dark-block}"
+    textColor: "#FFFFFF"
+    typography: "{typography.button}"
+    rounded: "{rounded.pill}"
+    padding: "16px 28px"
+    height: "52-56px"
+    border: "2px solid {colors.dark-block}"
+    shadow: "hard (4px 4px 0 {colors.dark-block} at 15% or solid offset on light fills)"
+    icon: "arrow → required, 20px, trailing"
+    scope: "Persuade tier only (landing, auth). NEVER in Operate screens."
   button-primary-hover:
     backgroundColor: "{colors.accent-hover}"
+  button-primary-pill-hover:
+    backgroundColor: "#1A1A1C"
+    translate: "-1px -1px with hard shadow grow to 5px 5px 0"
   button-primary-active:
     backgroundColor: "{colors.accent-active}"
   button-secondary:
@@ -214,6 +228,13 @@ The palette is a paper-and-ink neutral field with one meaningful accent and a re
 
 **The One Voice Rule.** The accent occupies ≤10% of any screen. Its rarity is the point; a screen that is 10% verdigris is loud, and one that is 30% is broken.
 
+**The Two-Tier Rule (Persuade vs Operate).** Kairos has two visual tiers that never mix:
+- **Persuade tier (landing, auth):** may use `dark-block` #0B0B0C as a persuasion fill — exactly one black `button-primary-pill` (52-56px, pill 999px, 2px border, hard offset shadow, trailing arrow) per viewport as the primary CTA, plus one static planned-vs-executed proof mock with tinted pastel fills and 2px borders. Verdigris remains for links and secondary actions.
+- **Operate tier (Calendar, Review, Kanban, Projects, all authenticated screens):** quiet ledger only — verdigris #0F766E for posted/executed truth and primary actions (10px radius, 40px, flat at rest), 1px hairline borders, `shadow-sm` at rest, no black pills, no hard shadows, no mascots, no zig-zag, no gamification. The dark block is punctuation only (one per surface max).
+- **Coexistence:** verdigris = truth, black = persuasion. They coexist on landing/auth only; Operate screens never wear black pills.
+
+**The Proof-Mock Rule.** The single persuasive mock on landing is a static planned-vs-executed bar (neutral planned track, verdigris executed fill, mono tabular figures). No mascots, no illustrated characters, no fabricated testimonials/logos/pricing — PRODUCT.md:62 is read as authorizing mockups/badges/code-blocks only, and DESIGN.md wins on mascots/gamification.
+
 ## Typography
 
 **Display Font:** Familjen Grotesk (with "Helvetica Neue", Arial, system-ui, sans-serif)
@@ -268,8 +289,11 @@ The form language is soft and geometric, with radius scaling by the size of the 
 ### Buttons
 - **Shape:** Gently rounded (10px), 40px tall, comfortable horizontal padding (18px).
 - **Primary:** Ledger Verdigris fill, Chalk White text, Onest 600 at 0.9375rem. Hover deepens to #115E59; active presses to #0A4F49.
+- **Primary-Pill (Persuade only):** Midnight Slate #0B0B0C fill, white text, fully round (999px), 52-56px tall, 16px 28px padding, 2px solid border, hard offset shadow (`4px 4px 0 rgba(11,11,12,.9)`), trailing arrow → required. Landing/auth only; never in Operate. Minimum touch target 52px.
 - **Secondary:** Ledger White fill with a 1px Rule Stone border and Carbon Ink text; hover shifts to Faint Stone.
 - **Ghost:** Transparent fill, Graphite text; hover reveals a Verdigris Wash background with verdigris text.
+- **Danger-secondary:** Ledger White fill, 1px Overrun Red border, Overrun Red text; hover Overrun Wash. Used for Delete where a full danger fill would over-claim.
+- **Touch targets:** all interactive controls ≥40px tall; card actions and auth submits ≥44px where possible.
 - **Focus:** Every variant shows `box-shadow: 0 0 0 3px rgba(15,118,110,.25)` on `:focus-visible`.
 
 ### Inputs / Fields
@@ -308,14 +332,14 @@ The running-timer indicator and the auto-stop promise. A round pill on Verdigris
 - **Do** keep planned blocks and their tracks neutral, and overlay executed work in accent.
 - **Do** label states honestly (Beta, Self-hosted, MVP, NEW) and only when the label is true.
 - **Do** keep the accent at or below 10% of any screen (The One Voice Rule).
-- **Do** maintain WCAG AA contrast for text and interactive states.
+- **Do** maintain WCAG AA contrast for text and interactive states. Placeholder and secondary text use Graphite (#52525B, ~7.7:1 on white) — never Faded Graphite (#A1A1AA, 2.56:1) for readable text; Faded Graphite is disabled-only.
 
 ### Don't:
 - **Don't** fabricate testimonials, customer logos, press mentions, or pricing — none exist.
 - **Don't** add mascots, illustrated characters, or celebratory gamification (confetti, streaks, vanity badges).
 - **Don't** imply AI suggestions or automation; Kairos has none.
 - **Don't** use the accent to decorate planned, unexecuted content.
-- **Don't** introduce a dark theme; the dark block is punctuation only, one per surface.
+- **Don't** introduce a dark theme; the dark block is punctuation only, one per surface (Operate), or one primary pill CTA per viewport (Persuade tier).
 - **Don't** use zero-radius or arbitrarily mixed corners within a component family.
 - **Don't** apply the marketing zig-zag composition to Operate screens.
 - **Don't** use proportional figures for time data.

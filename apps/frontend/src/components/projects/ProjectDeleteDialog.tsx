@@ -1,0 +1,115 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { Project } from '@/lib/projects-api';
+
+interface ProjectDeleteDialogProps {
+  project: Project;
+  onCancel: () => void;
+  onConfirm: () => Promise<void> | void;
+}
+
+const secondaryButton =
+  'inline-flex min-h-[40px] items-center justify-center rounded-md border border-border bg-surface px-4 py-2.5 font-medium text-ink transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+const dangerButton =
+  'inline-flex min-h-[40px] items-center justify-center rounded-md bg-danger px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-danger/90 active:bg-danger/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+
+export function ProjectDeleteDialog({ project, onCancel, onConfirm }: ProjectDeleteDialogProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState('');
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    cancelRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCancel();
+        return;
+      }
+      if (event.key !== 'Tab') {
+        return;
+      }
+      const focusables = panelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled])'
+      );
+      if (!focusables || focusables.length === 0) {
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel]);
+
+  const handleConfirm = async () => {
+    setIsDeleting(true);
+    setError('');
+    try {
+      await onConfirm();
+    } catch {
+      setError('Could not delete the project. Please try again.');
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+      onClick={onCancel}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-delete-title"
+        aria-describedby="project-delete-description"
+        onClick={(event) => event.stopPropagation()}
+        className="w-full max-w-sm rounded-lg bg-surface p-6 shadow-xl"
+      >
+        <h2 id="project-delete-title" className="font-display text-title text-ink">
+          Delete project
+        </h2>
+        <p id="project-delete-description" className="mt-2 text-body text-ink-secondary">
+          “{project.name}” will be removed from your projects. This can’t be undone in the app.
+        </p>
+        {error ? (
+          <p role="alert" className="mt-2 text-sm text-danger">
+            {error}
+          </p>
+        ) : null}
+        <div className="mt-6 flex items-center justify-end gap-2">
+          <button
+            ref={cancelRef}
+            type="button"
+            onClick={onCancel}
+            disabled={isDeleting}
+            className={secondaryButton}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={isDeleting}
+            className={dangerButton}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
