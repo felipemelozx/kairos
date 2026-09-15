@@ -85,8 +85,11 @@ public class AuthController implements AuthApi {
         }
 
         String userId = jwtService.getUserIdFromToken(refreshToken);
-        String newAccessToken = jwtService.generateAccessToken(UUID.fromString(userId));
+        UUID id = UUID.fromString(userId);
+        String newAccessToken = jwtService.generateAccessToken(id);
+        String newRefreshToken = jwtService.generateRefreshToken(id);
         CookieUtils.addAccessTokenCookie(response, newAccessToken);
+        CookieUtils.addRefreshTokenCookie(response, newRefreshToken);
         CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
 
         return ResponseEntity.ok(ApiResponse.success(null));

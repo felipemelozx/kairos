@@ -108,6 +108,48 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
+    void shouldScopeRefreshCookieToRefreshPath() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("refresh-path@example.com", "password123");
+
+        String refreshCookie = setCookieHeader(login, "REFRESH_TOKEN");
+        assertThat(refreshCookie).contains("Path=/api/auth/refresh");
+    }
+
+    @Test
+    void shouldRotateRefreshTokenOnRefresh() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("rotate@example.com", "password123");
+        String refreshToken = cookieValue(login, "REFRESH_TOKEN");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=" + refreshToken);
+
+        ResponseEntity<ApiResponse> response =
+                restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(headers), ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(cookieValue(response, "REFRESH_TOKEN")).isNotBlank();
+    }
+
+    @Test
+    void shouldReturn401WhenRefreshTokenInvalid() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=invalid-token");
+
+        ResponseEntity<ApiResponse> response =
+                restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(headers), ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void shouldReturn401WhenRefreshTokenMissing() {
+        ResponseEntity<ApiResponse> response =
+                restTemplate.postForEntity("/auth/refresh", HttpEntity.EMPTY, ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     void shouldClearCsrfCookieOnLogout() {
         ResponseEntity<ApiResponse> login = registerAndLogin("logout@example.com", "password123");
         String accessToken = cookieValue(login, "ACCESS_TOKEN");
