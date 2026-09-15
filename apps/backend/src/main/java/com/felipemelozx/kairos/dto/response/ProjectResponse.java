@@ -15,13 +15,14 @@ public record ProjectResponse(
     Instant createdAt
 ) {
     public static ProjectResponse from(Project project) {
+        String status = project.getStatus() == null ? null : project.getStatus().name();
         return new ProjectResponse(
             project.getId(),
             project.getUserId(),
             project.getName(),
             project.getDescription(),
             project.getColor(),
-            project.getStatus().name(),
+            status,
             project.getCreatedAt()
         );
     }

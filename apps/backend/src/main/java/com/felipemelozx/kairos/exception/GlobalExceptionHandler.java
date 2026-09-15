@@ -22,6 +22,8 @@ public class GlobalExceptionHandler {
             status = HttpStatus.CONFLICT;
         } else if ("NOT_FOUND".equals(ex.getCode())) {
             status = HttpStatus.NOT_FOUND;
+        } else if ("UNAUTHORIZED".equals(ex.getCode()) || "INVALID_CREDENTIALS".equals(ex.getCode())) {
+            status = HttpStatus.UNAUTHORIZED;
         } else {
             status = HttpStatus.BAD_REQUEST;
         }
@@ -33,8 +35,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> details = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
-            String field = ((FieldError) error).getField();
-            details.put(field, error.getDefaultMessage());
+            String field = error instanceof FieldError fieldError ? fieldError.getField() : error.getObjectName();
+            String message = error.getDefaultMessage();
+            details.put(field, message);
         });
         return ResponseEntity.badRequest().body(
                 ApiResponse.error(new ErrorResponse("VALIDATION_ERROR",

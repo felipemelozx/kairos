@@ -5,6 +5,7 @@ import com.felipemelozx.kairos.dto.request.CreateProjectRequest;
 import com.felipemelozx.kairos.dto.request.UpdateProjectRequest;
 import com.felipemelozx.kairos.dto.response.ApiResponse;
 import com.felipemelozx.kairos.dto.response.ProjectResponse;
+import com.felipemelozx.kairos.exception.BusinessException;
 import com.felipemelozx.kairos.service.ProjectService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -59,6 +60,13 @@ public class ProjectController implements ProjectApi {
     }
 
     private UUID currentUserId(UserDetails principal) {
-        return UUID.fromString(principal.getUsername());
+        if (principal == null || principal.getUsername() == null) {
+            throw new BusinessException("UNAUTHORIZED", "Not authenticated");
+        }
+        try {
+            return UUID.fromString(principal.getUsername());
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException("UNAUTHORIZED", "Not authenticated");
+        }
     }
 }
