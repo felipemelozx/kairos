@@ -25,6 +25,7 @@ class KairosApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// Smoke test: passes if Spring context loads successfully
 	}
 
 }

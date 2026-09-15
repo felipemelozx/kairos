@@ -39,6 +39,7 @@ public class User {
     private Instant createdAt;
 
     public User() {
+        // Required by JPA/Hibernate
     }
 
     public UUID getId() {

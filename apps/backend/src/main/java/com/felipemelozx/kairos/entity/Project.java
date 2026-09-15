@@ -46,6 +46,7 @@ public class Project {
     private Instant deletedAt;
 
     public Project() {
+        // Required by JPA/Hibernate
     }
 
     public UUID getId() {
