@@ -18,9 +18,9 @@ export const PROJECT_COLOR_PRESETS = [
 ] as const;
 
 export interface ProjectFields {
-  name: string;
-  description: string;
-  color: string;
+  name: string | null | undefined;
+  description: string | null | undefined;
+  color: string | null | undefined;
 }
 
 export type ProjectField = keyof ProjectFields;
@@ -37,9 +37,9 @@ export function validateProject(
 ): ProjectErrors {
   const { requireColor = true } = options;
   const errors: ProjectErrors = {};
-  const name = fields.name.trim();
+  const name = (fields.name ?? '').trim();
   const description = fields.description ?? '';
-  const color = fields.color.trim();
+  const color = (fields.color ?? '').trim();
 
   if (!name) {
     errors.name = 'Enter a project name.';
