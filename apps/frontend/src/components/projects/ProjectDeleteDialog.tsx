@@ -10,9 +10,9 @@ interface ProjectDeleteDialogProps {
 }
 
 const secondaryButton =
-  'inline-flex min-h-[40px] items-center justify-center rounded-md border border-border bg-surface px-4 py-2.5 font-medium text-ink transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-4 py-2.5 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 const dangerButton =
-  'inline-flex min-h-[40px] items-center justify-center rounded-md bg-danger px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-danger/90 active:bg-danger/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-danger px-4 py-2.5 text-sm font-bold text-white shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 
 export function ProjectDeleteDialog({ project, onCancel, onConfirm }: ProjectDeleteDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -66,18 +66,21 @@ export function ProjectDeleteDialog({ project, onCancel, onConfirm }: ProjectDel
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
-      onClick={onCancel}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="Close delete dialog"
+        onClick={onCancel}
+        tabIndex={-1}
+        className="absolute inset-0 cursor-default bg-ink/40"
+      />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="project-delete-title"
         aria-describedby="project-delete-description"
-        onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-sm rounded-lg bg-surface p-6 shadow-xl"
+        className="relative nb-card w-full max-w-sm p-6"
       >
         <h2 id="project-delete-title" className="font-display text-title text-ink">
           Delete project

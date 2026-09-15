@@ -7,15 +7,20 @@ colors:
   accent-active: "#0A4F49"
   accent-subtle: "#E6F4F2"
   accent-contrast: "#FFFFFF"
-  canvas: "#FAFAF9"
+  canvas: "#FAF8F5"
   surface: "#FFFFFF"
   surface-muted: "#F4F4F2"
   border: "#E7E5E4"
   border-strong: "#D6D3D1"
-  ink: "#0A0A0A"
+  ink: "#111111"
   ink-secondary: "#52525B"
   ink-muted: "#A1A1AA"
   dark-block: "#0B0B0C"
+  brand-violet: "#C4B5DE"
+  brand-peach: "#FFD4B8"
+  brand-green: "#4ADE80"
+  brand-dark: "#111111"
+  brand-light: "#FAF8F5"
   success: "#15803D"
   success-subtle: "#DCFCE7"
   warning: "#B45309"
@@ -26,41 +31,41 @@ colors:
   info-subtle: "#DBEAFE"
 typography:
   display:
-    fontFamily: "Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
+    fontFamily: "Inter, Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
     fontSize: "clamp(2.75rem, 5vw, 4.5rem)"
     fontWeight: 700
     lineHeight: 1.02
     letterSpacing: "-0.02em"
   headline:
-    fontFamily: "Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
+    fontFamily: "Inter, Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
     fontSize: "clamp(1.875rem, 3vw, 2.75rem)"
     fontWeight: 650
     lineHeight: 1.1
     letterSpacing: "-0.01em"
   title:
-    fontFamily: "Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
+    fontFamily: "Inter, Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
     fontSize: "1.25rem"
     fontWeight: 600
     lineHeight: 1.3
   body:
-    fontFamily: "Onest, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontFamily: "Inter, Onest, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.6
   label:
-    fontFamily: "JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontFamily: "IBM Plex Mono, JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: "0.75rem"
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "0.12em"
   button:
-    fontFamily: "Onest, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontFamily: "Inter, Onest, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 600
     lineHeight: 1
     letterSpacing: "0.01em"
   data:
-    fontFamily: "JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontFamily: "IBM Plex Mono, JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: 1.4
@@ -82,39 +87,44 @@ spacing:
   4xl: "120px"
 components:
   button-primary:
-    backgroundColor: "{colors.accent}"
-    textColor: "{colors.accent-contrast}"
+    backgroundColor: "{colors.brand-peach}"
+    textColor: "{colors.brand-dark}"
     typography: "{typography.button}"
-    rounded: "{rounded.md}"
+    rounded: "12px"
     padding: "10px 18px"
     height: "40px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
   button-primary-pill:
-    backgroundColor: "{colors.dark-block}"
-    textColor: "#FFFFFF"
+    backgroundColor: "{colors.brand-peach}"
+    textColor: "{colors.brand-dark}"
     typography: "{typography.button}"
-    rounded: "{rounded.pill}"
+    rounded: "12px"
     padding: "16px 28px"
     height: "52-56px"
-    border: "2px solid {colors.dark-block}"
-    shadow: "hard (4px 4px 0 {colors.dark-block} at 15% or solid offset on light fills)"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-md (4px 4px 0 {colors.brand-dark})"
     icon: "arrow → required, 20px, trailing"
-    scope: "Persuade tier only (landing, auth). NEVER in Operate screens."
+    scope: "Persuade tier only (landing, auth). NEVER in Operate screens. Never black fills."
   button-primary-hover:
-    backgroundColor: "{colors.accent-hover}"
+    backgroundColor: "#FFCAB0"
+    translate: "-2px -2px with shadow grow to nb-lg (6px 6px 0)"
   button-primary-pill-hover:
-    backgroundColor: "#1A1A1C"
-    translate: "-1px -1px with hard shadow grow to 5px 5px 0"
+    backgroundColor: "#FFCAB0"
+    translate: "-2px -2px with shadow grow to nb-lg (6px 6px 0)"
   button-primary-active:
-    backgroundColor: "{colors.accent-active}"
+    backgroundColor: "{colors.brand-peach}"
   button-secondary:
     backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
+    textColor: "{colors.brand-dark}"
     typography: "{typography.button}"
-    rounded: "{rounded.md}"
+    rounded: "12px"
     padding: "10px 18px"
     height: "40px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
   button-secondary-hover:
-    backgroundColor: "{colors.surface-muted}"
+    backgroundColor: "{colors.brand-light}"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.ink-secondary}"
@@ -129,26 +139,55 @@ components:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     typography: "{typography.body}"
-    rounded: "{rounded.md}"
+    rounded: "12px"
     padding: "10px 12px"
     height: "40px"
+    border: "2px solid {colors.brand-dark}"
   card:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.lg}"
+    rounded: "16px"
     padding: "{spacing.lg}"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-md (4px 4px 0 {colors.brand-dark}); hover translate(-2px,-2px) + nb-lg"
+  card-peach:
+    backgroundColor: "{colors.brand-peach}"
+    textColor: "{colors.brand-dark}"
+    rounded: "16px"
+    padding: "{spacing.lg}"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-md (4px 4px 0 {colors.brand-dark})"
+  card-violet:
+    backgroundColor: "{colors.brand-violet}"
+    textColor: "{colors.brand-dark}"
+    rounded: "16px"
+    padding: "{spacing.lg}"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-md (4px 4px 0 {colors.brand-dark})"
   badge:
-    backgroundColor: "{colors.surface-muted}"
-    textColor: "{colors.ink-secondary}"
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.brand-dark}"
     typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "4px 10px"
+    rounded: "8px"
+    padding: "6px 14px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
   badge-accent:
-    backgroundColor: "{colors.accent-subtle}"
-    textColor: "{colors.accent}"
+    backgroundColor: "{colors.brand-violet}"
+    textColor: "{colors.brand-dark}"
     typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "4px 10px"
+    rounded: "8px"
+    padding: "6px 14px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
+  badge-success:
+    backgroundColor: "{colors.brand-green}"
+    textColor: "{colors.brand-dark}"
+    typography: "{typography.label}"
+    rounded: "8px"
+    padding: "6px 14px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
   nav-item:
     backgroundColor: "transparent"
     textColor: "{colors.ink-secondary}"

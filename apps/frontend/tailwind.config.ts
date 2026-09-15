@@ -7,8 +7,22 @@ const config: Config = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    container: {
+      center: true,
+      padding: '2rem',
+      screens: {
+        '2xl': '1400px',
+      },
+    },
     extend: {
       colors: {
+        brand: {
+          violet: '#C4B5DE',
+          peach: '#FFD4B8',
+          green: '#4ADE80',
+          dark: '#111111',
+          light: '#FAF8F5',
+        },
         accent: {
           DEFAULT: '#0F766E',
           hover: '#115E59',
@@ -49,9 +63,10 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ['Familjen Grotesk', 'Helvetica Neue', 'Arial', 'system-ui', 'sans-serif'],
-        body: ['Onest', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        display: ['Inter', 'Familjen Grotesk', 'Helvetica Neue', 'Arial', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        body: ['Inter', 'Onest', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['IBM Plex Mono', 'JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
         display: ['clamp(2.75rem, 5vw, 4.5rem)', { lineHeight: '1.02', letterSpacing: '-0.02em', fontWeight: '700' }],
@@ -88,6 +103,10 @@ const config: Config = {
         focus: '0 0 0 3px rgba(15,118,110,.25)',
         hard: '4px 4px 0 rgba(11,11,12,.9)',
         'hard-lg': '6px 6px 0 rgba(11,11,12,.9)',
+        'nb-sm': '2px 2px 0px 0px #111111',
+        'nb-md': '4px 4px 0px 0px #111111',
+        'nb-lg': '6px 6px 0px 0px #111111',
+        'nb-xl': '8px 8px 0px 0px #111111',
       },
     },
   },

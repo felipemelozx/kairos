@@ -10,9 +10,9 @@ import { ProjectForm } from '@/components/projects/ProjectForm';
 type FormMode = 'create' | 'edit' | null;
 
 const primaryButton =
-  'inline-flex min-h-[40px] items-center justify-center rounded-md bg-accent px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-accent-hover active:bg-accent-active focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-brand-peach px-4 py-2.5 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 const secondaryButton =
-  'inline-flex min-h-[40px] items-center justify-center rounded-md border border-border bg-surface px-4 py-2.5 font-medium text-ink transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-4 py-2.5 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 
 export function ProjectList() {
   const { projects, isLoading, error, fetchProjects, createProject, updateProject, deleteProject } =
@@ -100,7 +100,7 @@ export function ProjectList() {
     ) : null;
 
   return (
-    <main className="min-h-screen bg-canvas text-ink">
+    <main className="min-h-screen bg-brand-light text-ink">
       <div className="mx-auto w-full max-w-[1200px] px-6 py-12 md:px-8">
         <header className="mb-8 flex items-start justify-between gap-6">
           <div>
@@ -141,7 +141,7 @@ export function ProjectList() {
         ) : error ? (
           <div
             role="alert"
-            className="rounded-md border border-danger/30 bg-danger-subtle p-4 text-body text-danger"
+            className="nb-card border-danger bg-danger-subtle p-4 text-body text-danger"
           >
             <p>{error}</p>
             <button
@@ -153,7 +153,7 @@ export function ProjectList() {
             </button>
           </div>
         ) : projects.length === 0 ? (
-          <div className="rounded-lg border border-border bg-surface p-6 text-center shadow-sm">
+          <div className="nb-card p-6 text-center">
             <h2 className="font-display text-title text-ink">No projects yet</h2>
             <p className="mt-2 text-body text-ink-secondary">
               Create your first project to organize your time blocks.

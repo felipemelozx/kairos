@@ -17,18 +17,29 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 });
 
-const badgeBase = 'inline-flex items-center rounded-pill px-2.5 py-1 font-mono text-label uppercase';
-const badgeAccent = `${badgeBase} bg-accent-subtle text-accent`;
-const badgeNeutral = `${badgeBase} bg-surface-muted text-ink-secondary`;
+function formatCreatedAt(createdAt: string): string {
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) {
+    return 'Created date unavailable';
+  }
+  try {
+    return `Created ${dateFormatter.format(date)}`;
+  } catch {
+    return 'Created date unavailable';
+  }
+}
+
+const badgeActive = 'status-badge live';
+const badgeArchived = 'status-badge neutral';
 
 const ghostButton =
-  'inline-flex min-h-[40px] items-center gap-1.5 rounded-md px-3 py-2 text-button text-ink-secondary transition-colors hover:bg-accent-subtle hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-3 py-2 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 const dangerSecondaryButton =
-  'inline-flex min-h-[40px] items-center gap-1.5 rounded-md border border-danger/40 bg-surface px-3 py-2 text-button text-danger transition-colors hover:bg-danger-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-3 py-2 text-sm font-bold text-danger shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 const primaryButton =
-  'inline-flex min-h-[40px] items-center justify-center rounded-md bg-accent px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-accent-hover active:bg-accent-active focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-brand-peach px-4 py-2.5 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md active:translate-x-px active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 const secondaryButton =
-  'inline-flex min-h-[40px] items-center rounded-md border border-border bg-surface px-4 py-2 font-medium text-ink transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-4 py-2 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 
 export function ProjectCard({
   project,
@@ -68,7 +79,7 @@ export function ProjectCard({
   };
 
   return (
-    <article className="flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-6 shadow-sm">
+    <article className="nb-card nb-card-hover flex h-full flex-col gap-4 p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-2">
           <span
@@ -82,7 +93,7 @@ export function ProjectCard({
             {project.name}
           </h2>
         </div>
-        <span className={isActive ? badgeAccent : badgeNeutral}>
+        <span className={isActive ? badgeActive : badgeArchived}>
           {isActive ? 'Active' : 'Archived'}
         </span>
       </div>
@@ -98,7 +109,7 @@ export function ProjectCard({
       ) : null}
 
       {confirmingArchive ? (
-        <div className="mt-auto rounded-md bg-surface-muted p-3">
+        <div className="nb-card-peach mt-auto p-3">
           <p className="text-body text-ink">Archive “{project.name}”?</p>
           <p className="text-sm text-ink-secondary">You can reactivate it later.</p>
           <div className="mt-3 flex items-center gap-2">
@@ -124,7 +135,7 @@ export function ProjectCard({
         <div className="mt-auto flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-data tabular-nums text-ink-secondary">
-              Created {dateFormatter.format(new Date(project.createdAt))}
+              {formatCreatedAt(project.createdAt)}
             </span>
             <span
               title="Total executed time lands with Work Sessions (SESSION-001)"

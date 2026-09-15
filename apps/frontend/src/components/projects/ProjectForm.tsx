@@ -27,18 +27,18 @@ interface ProjectFormProps {
 const FIELD_ORDER: ProjectField[] = ['name', 'description', 'color'];
 
 const inputBase =
-  'w-full rounded-md border bg-surface px-3.5 py-2.5 text-ink placeholder:text-ink-secondary placeholder:opacity-100 focus:outline-none focus:ring-2';
-const inputDefault = 'border-border focus:border-accent focus:ring-accent/20';
-const inputInvalid = 'border-danger focus:border-danger focus:ring-danger/20';
+  'input-nb text-ink focus:outline-none';
+const inputDefault = '';
+const inputInvalid = 'border-danger';
 
 const primaryButton =
-  'inline-flex min-h-[40px] items-center justify-center rounded-md bg-accent px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-accent-hover active:bg-accent-active focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-brand-peach px-4 py-2.5 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 const secondaryButton =
-  'inline-flex min-h-[40px] items-center justify-center rounded-md border border-border bg-surface px-4 py-2.5 font-medium text-ink transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-4 py-2.5 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
 
-const presetBase = 'h-10 w-10 min-h-[40px] min-w-[40px] rounded-pill border border-border';
-const presetIdle = `${presetBase} hover:ring-2 hover:ring-border-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`;
-const presetSelected = `${presetBase} ring-2 ring-accent ring-offset-2 ring-offset-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`;
+const presetBase = 'h-10 w-10 min-h-[40px] min-w-[40px] rounded-xl border-2 border-brand-dark shadow-nb-sm';
+const presetIdle = `${presetBase} transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet`;
+const presetSelected = `${presetBase} ring-2 ring-brand-violet ring-offset-2 ring-offset-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet`;
 
 export function ProjectForm({
   mode,
@@ -105,6 +105,10 @@ export function ProjectForm({
         };
         await createProject(payload);
       } else {
+        if (!project) {
+          setFormError('Could not save the project. Please try again.');
+          return;
+        }
         const changes: UpdateProjectData = {};
         if (trimmedName !== project?.name) {
           changes.name = trimmedName;
@@ -119,7 +123,7 @@ export function ProjectForm({
           onSuccess();
           return;
         }
-        await updateProject(project!.id, changes);
+        await updateProject(project.id, changes);
       }
       onSuccess();
     } catch (error) {
@@ -141,7 +145,7 @@ export function ProjectForm({
   const colorWellValue = PROJECT_COLOR_PATTERN.test(selectedColor) ? selectedColor : '#0F766E';
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-6 shadow-sm">
+    <section className="nb-card p-6">
       <h2 className="font-display text-title text-ink">
         {mode === 'create' ? 'New project' : 'Edit project'}
       </h2>
@@ -217,7 +221,7 @@ export function ProjectForm({
 
         <fieldset
           aria-describedby={fieldErrors.color ? 'project-color-error' : undefined}
-          className="rounded-md border border-border p-4"
+          className="rounded-xl border-2 border-brand-dark p-4"
         >
           <legend className="px-1 text-sm font-medium text-ink-secondary">Color</legend>
           <div className="flex flex-wrap items-center gap-3">
@@ -246,7 +250,7 @@ export function ProjectForm({
                 setColor(event.target.value);
                 clearFieldError('color');
               }}
-              className="h-10 w-10 rounded-md border border-border bg-surface p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+              className="h-10 w-10 rounded-xl border-2 border-brand-dark bg-white p-1 shadow-nb-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet"
             />
             <div className="min-w-[8rem] flex-1">
               <label htmlFor="project-color" className="block text-sm font-medium text-ink-secondary mb-1">

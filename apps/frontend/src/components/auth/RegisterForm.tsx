@@ -24,9 +24,9 @@ interface RegisterFormProps {
 const REGISTER_FIELD_ORDER: RegisterField[] = ['name', 'email', 'password'];
 
 const inputBase =
-  'w-full rounded-md border bg-surface px-3.5 py-2.5 text-ink placeholder:text-ink-secondary placeholder:opacity-100 focus:outline-none focus:ring-2';
-const inputDefault = 'border-border focus:border-accent focus:ring-accent/20';
-const inputInvalid = 'border-danger focus:border-danger focus:ring-danger/20';
+  'input-nb text-ink focus:outline-none';
+const inputDefault = '';
+const inputInvalid = 'border-danger';
 
 export function RegisterForm({
   onSwitchToLogin,
@@ -193,7 +193,7 @@ export function RegisterForm({
       <button
         type="submit"
         disabled={isSubmitting}
-        className="btn-persuade min-h-[52px] w-full text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-persuade min-h-[52px] w-full text-base disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? 'Creating account...' : 'Register'}
         <span aria-hidden="true">→</span>
@@ -203,7 +203,7 @@ export function RegisterForm({
         <button
           type="button"
           onClick={onSwitchToLogin}
-          className="block w-full mt-2 rounded-md border border-border px-4 py-3 font-medium text-ink transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+          className="btn-nb-secondary mt-2 block w-full text-sm"
         >
           Sign in
         </button>

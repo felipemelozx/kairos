@@ -1,24 +1,25 @@
 import type { Metadata } from 'next';
-import { Familjen_Grotesk, Onest, JetBrains_Mono } from 'next/font/google';
+import { Inter, IBM_Plex_Mono } from 'next/font/google';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import './globals.css';
 
-const display = Familjen_Grotesk({
+const display = Inter({
   subsets: ['latin'],
   variable: '--font-display',
-  fallback: ['Helvetica Neue', 'Arial', 'system-ui', 'sans-serif'],
+  fallback: ['Familjen Grotesk', 'Helvetica Neue', 'Arial', 'system-ui', 'sans-serif'],
 });
 
-const body = Onest({
+const body = Inter({
   subsets: ['latin'],
   variable: '--font-body',
-  fallback: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+  fallback: ['Onest', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 
-const mono = JetBrains_Mono({
+const mono = IBM_Plex_Mono({
   subsets: ['latin'],
+  weight: ['400', '500', '600'],
   variable: '--font-mono',
-  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+  fallback: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
 });
 
 export const metadata: Metadata = {
