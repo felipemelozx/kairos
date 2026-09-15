@@ -8,11 +8,11 @@ import com.felipemelozx.kairos.dto.response.UserResponse;
 import com.felipemelozx.kairos.entity.User;
 import com.felipemelozx.kairos.exception.BusinessException;
 import com.felipemelozx.kairos.repository.UserRepository;
-import com.felipemelozx.kairos.security.CookieUtils;
-import com.felipemelozx.kairos.security.csrf.CsrfTokenService;
+import com.felipemelozx.kairos.security.AuthCookieService;
 import com.felipemelozx.kairos.security.jwt.JwtService;
 import com.felipemelozx.kairos.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,78 +28,110 @@ public class AuthController implements AuthApi {
     private final AuthService authService;
     private final JwtService jwtService;
     private final UserRepository userRepository;
-    private final CsrfTokenService csrfTokenService;
+    private final AuthCookieService authCookieService;
 
     public AuthController(AuthService authService, JwtService jwtService, UserRepository userRepository,
-                          CsrfTokenService csrfTokenService) {
+                          AuthCookieService authCookieService) {
         this.authService = authService;
         this.jwtService = jwtService;
         this.userRepository = userRepository;
-        this.csrfTokenService = csrfTokenService;
+        this.authCookieService = authCookieService;
     }
 
     @Override
+    @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(
-            RegisterRequest request,
+            @Valid @RequestBody RegisterRequest request,
             HttpServletResponse response) {
         UserResponse user = authService.register(request);
 
-        UUID userId = user.id();
-        String accessToken = jwtService.generateAccessToken(userId);
-        String refreshToken = jwtService.generateRefreshToken(userId);
-        CookieUtils.addAccessTokenCookie(response, accessToken);
-        CookieUtils.addRefreshTokenCookie(response, refreshToken);
-        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
+        authCookieService.issueAuthCookies(response, user.id(), 0);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(user));
     }
 
     @Override
+    @PostMapping("/login")
     public ResponseEntity<ApiResponse<UserResponse>> login(
-            LoginRequest request,
+            @Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
         UserResponse user = authService.login(request);
 
-        UUID userId = user.id();
-        String accessToken = jwtService.generateAccessToken(userId);
-        String refreshToken = jwtService.generateRefreshToken(userId);
-        CookieUtils.addAccessTokenCookie(response, accessToken);
-        CookieUtils.addRefreshTokenCookie(response, refreshToken);
-        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
+        authCookieService.issueAuthCookies(response, user.id());
 
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
-        CookieUtils.clearCookies(response);
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @AuthenticationPrincipal UserDetails principal,
+            @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
+            HttpServletResponse response) {
+        UUID userId = resolveUserId(principal, refreshToken);
+        if (userId != null) {
+            userRepository.findById(userId).ifPresent(user -> {
+                int current = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
+                user.setTokenVersion(current + 1);
+                userRepository.save(user);
+            });
+        }
+        authCookieService.clearAuthCookies(response);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Override
+    @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<Void>> refresh(
-            String refreshToken,
+            @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
             HttpServletResponse response) {
         if (refreshToken == null || !jwtService.validateToken(refreshToken)) {
             throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
         }
 
         String userId = jwtService.getUserIdFromToken(refreshToken);
-        UUID id = UUID.fromString(userId);
-        String newAccessToken = jwtService.generateAccessToken(id);
-        String newRefreshToken = jwtService.generateRefreshToken(id);
-        CookieUtils.addAccessTokenCookie(response, newAccessToken);
-        CookieUtils.addRefreshTokenCookie(response, newRefreshToken);
-        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
+        int tokenVersion = jwtService.getTokenVersionFromToken(refreshToken);
+        UUID id;
+        try {
+            id = UUID.fromString(userId);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
+        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid"));
+        int currentVersion = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
+        if (tokenVersion != currentVersion) {
+            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
+        }
+        authCookieService.issueAuthCookies(response, id, currentVersion);
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<UserResponse>> me(UserDetails principal) {
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> me(@AuthenticationPrincipal UserDetails principal) {
         UUID userId = UUID.fromString(principal.getUsername());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("NOT_FOUND", "User not found"));
         return ResponseEntity.ok(ApiResponse.success(UserResponse.from(user)));
+    }
+
+    private UUID resolveUserId(UserDetails principal, String refreshToken) {
+        if (principal != null) {
+            try {
+                return UUID.fromString(principal.getUsername());
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        if (refreshToken != null && jwtService.validateToken(refreshToken)) {
+            try {
+                return UUID.fromString(jwtService.getUserIdFromToken(refreshToken));
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        return null;
     }
 }

@@ -14,6 +14,8 @@ import java.util.UUID;
 @Service
 public class JwtService {
 
+    private static final String TOKEN_VERSION_CLAIM = "tv";
+
     @Value("${jwt.secret}")
     private String secret;
 
@@ -24,16 +26,25 @@ public class JwtService {
     private long refreshTokenExpiration;
 
     public String generateAccessToken(UUID userId) {
-        return buildToken(userId, accessTokenExpiration);
+        return buildToken(userId, accessTokenExpiration, 0);
     }
 
     public String generateRefreshToken(UUID userId) {
-        return buildToken(userId, refreshTokenExpiration);
+        return buildToken(userId, refreshTokenExpiration, 0);
     }
 
-    private String buildToken(UUID userId, long expiration) {
+    public String generateAccessToken(UUID userId, int tokenVersion) {
+        return buildToken(userId, accessTokenExpiration, tokenVersion);
+    }
+
+    public String generateRefreshToken(UUID userId, int tokenVersion) {
+        return buildToken(userId, refreshTokenExpiration, tokenVersion);
+    }
+
+    private String buildToken(UUID userId, long expiration, int tokenVersion) {
         return Jwts.builder()
             .subject(userId.toString())
+            .claim(TOKEN_VERSION_CLAIM, tokenVersion)
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + expiration))
             .signWith(getSigningKey(), Jwts.SIG.HS256)
@@ -59,6 +70,14 @@ public class JwtService {
 
     public String getUserIdFromToken(String token) {
         return parseToken(token).getSubject();
+    }
+
+    public int getTokenVersionFromToken(String token) {
+        Object version = parseToken(token).get(TOKEN_VERSION_CLAIM);
+        if (version instanceof Number number) {
+            return number.intValue();
+        }
+        return 0;
     }
 
     private SecretKey getSigningKey() {

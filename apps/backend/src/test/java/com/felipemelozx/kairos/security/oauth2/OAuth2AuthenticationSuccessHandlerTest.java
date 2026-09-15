@@ -1,6 +1,10 @@
 package com.felipemelozx.kairos.security.oauth2;
 
 import com.felipemelozx.kairos.dto.response.UserResponse;
+import com.felipemelozx.kairos.entity.User;
+import com.felipemelozx.kairos.entity.enums.AuthProvider;
+import com.felipemelozx.kairos.repository.UserRepository;
+import com.felipemelozx.kairos.security.AuthCookieService;
 import com.felipemelozx.kairos.security.csrf.CsrfTokenService;
 import com.felipemelozx.kairos.security.jwt.JwtService;
 import com.felipemelozx.kairos.service.AuthService;
@@ -43,6 +47,9 @@ class OAuth2AuthenticationSuccessHandlerTest {
     private CsrfTokenService csrfTokenService;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private Authentication authentication;
 
     private OAuth2AuthenticationSuccessHandler handler;
@@ -51,7 +58,8 @@ class OAuth2AuthenticationSuccessHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new OAuth2AuthenticationSuccessHandler(authService, jwtService, csrfTokenService, FRONTEND_URL);
+        AuthCookieService authCookieService = new AuthCookieService(jwtService, csrfTokenService, userRepository);
+        handler = new OAuth2AuthenticationSuccessHandler(authService, authCookieService, FRONTEND_URL);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
     }
@@ -110,8 +118,16 @@ class OAuth2AuthenticationSuccessHandlerTest {
                         "GOOGLE",
                         true,
                         Instant.now()));
-        when(jwtService.generateAccessToken(USER_ID)).thenReturn("access-token");
-        when(jwtService.generateRefreshToken(USER_ID)).thenReturn("refresh-token");
+        User user = new User();
+        user.setId(USER_ID);
+        user.setEmail("user@example.com");
+        user.setName("Test User");
+        user.setProvider(AuthProvider.GOOGLE);
+        user.setActive(true);
+        user.setTokenVersion(0);
+        when(userRepository.findById(USER_ID)).thenReturn(java.util.Optional.of(user));
+        when(jwtService.generateAccessToken(USER_ID, 0)).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(USER_ID, 0)).thenReturn("refresh-token");
         when(csrfTokenService.generateToken()).thenReturn(CSRF_TOKEN);
     }
 

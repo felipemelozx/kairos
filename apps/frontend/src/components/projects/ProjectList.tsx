@@ -126,6 +126,7 @@ export function ProjectList() {
         {mode ? (
           <div className="mb-8">
             <ProjectForm
+              key={mode === 'edit' ? `edit-${editing?.id ?? 'none'}` : 'create'}
               mode={mode}
               project={editing}
               onCancel={closeForm}

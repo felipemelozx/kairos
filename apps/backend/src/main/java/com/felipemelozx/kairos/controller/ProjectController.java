@@ -7,9 +7,17 @@ import com.felipemelozx.kairos.dto.response.ApiResponse;
 import com.felipemelozx.kairos.dto.response.ProjectResponse;
 import com.felipemelozx.kairos.exception.BusinessException;
 import com.felipemelozx.kairos.service.ProjectService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,33 +35,47 @@ public class ProjectController implements ProjectApi {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<ProjectResponse>> create(CreateProjectRequest request, UserDetails principal) {
+    @PostMapping
+    public ResponseEntity<ApiResponse<ProjectResponse>> create(
+            @Valid @RequestBody CreateProjectRequest request,
+            @AuthenticationPrincipal UserDetails principal) {
         UUID userId = currentUserId(principal);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(projectService.create(userId, request)));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<List<ProjectResponse>>> list(UserDetails principal) {
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<ProjectResponse>>> list(
+            @AuthenticationPrincipal UserDetails principal) {
         UUID userId = currentUserId(principal);
         return ResponseEntity.ok(ApiResponse.success(projectService.listByUser(userId)));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<ProjectResponse>> get(UUID projectId, UserDetails principal) {
+    @GetMapping("/{projectId}")
+    public ResponseEntity<ApiResponse<ProjectResponse>> get(
+            @PathVariable("projectId") UUID projectId,
+            @AuthenticationPrincipal UserDetails principal) {
         UUID userId = currentUserId(principal);
         return ResponseEntity.ok(ApiResponse.success(projectService.getById(projectId, userId)));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<ProjectResponse>> update(UUID projectId, UpdateProjectRequest request,
-                                                               UserDetails principal) {
+    @PatchMapping("/{projectId}")
+    public ResponseEntity<ApiResponse<ProjectResponse>> update(
+            @PathVariable("projectId") UUID projectId,
+            @Valid @RequestBody UpdateProjectRequest request,
+            @AuthenticationPrincipal UserDetails principal) {
         UUID userId = currentUserId(principal);
         return ResponseEntity.ok(ApiResponse.success(projectService.update(projectId, userId, request)));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<Void>> delete(UUID projectId, UserDetails principal) {
+    @DeleteMapping("/{projectId}")
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable("projectId") UUID projectId,
+            @AuthenticationPrincipal UserDetails principal) {
         UUID userId = currentUserId(principal);
         projectService.softDelete(projectId, userId);
         return ResponseEntity.ok(ApiResponse.success(null));

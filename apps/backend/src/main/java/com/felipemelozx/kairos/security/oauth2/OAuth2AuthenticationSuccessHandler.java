@@ -1,12 +1,7 @@
 package com.felipemelozx.kairos.security.oauth2;
 
 import com.felipemelozx.kairos.dto.response.UserResponse;
-import com.felipemelozx.kairos.entity.User;
-import com.felipemelozx.kairos.entity.enums.AuthProvider;
-import com.felipemelozx.kairos.repository.UserRepository;
-import com.felipemelozx.kairos.security.CookieUtils;
-import com.felipemelozx.kairos.security.csrf.CsrfTokenService;
-import com.felipemelozx.kairos.security.jwt.JwtService;
+import com.felipemelozx.kairos.security.AuthCookieService;
 import com.felipemelozx.kairos.service.AuthService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,22 +13,18 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.Instant;
 
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final AuthService authService;
-    private final JwtService jwtService;
-    private final CsrfTokenService csrfTokenService;
+    private final AuthCookieService authCookieService;
     private final String frontendUrl;
 
-    public OAuth2AuthenticationSuccessHandler(AuthService authService, JwtService jwtService,
-                                              CsrfTokenService csrfTokenService,
+    public OAuth2AuthenticationSuccessHandler(AuthService authService, AuthCookieService authCookieService,
                                               @Value("${app.frontend-url:http://localhost:3000}") String frontendUrl) {
         this.authService = authService;
-        this.jwtService = jwtService;
-        this.csrfTokenService = csrfTokenService;
+        this.authCookieService = authCookieService;
         this.frontendUrl = frontendUrl;
     }
 
@@ -47,12 +38,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         UserResponse userResponse = authService.findOrCreateGoogleUser(email, name, picture);
 
-        String accessToken = jwtService.generateAccessToken(userResponse.id());
-        String refreshToken = jwtService.generateRefreshToken(userResponse.id());
-
-        CookieUtils.addAccessTokenCookie(response, accessToken);
-        CookieUtils.addRefreshTokenCookie(response, refreshToken);
-        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
+        authCookieService.issueAuthCookies(response, userResponse.id());
 
         getRedirectStrategy().sendRedirect(request, response, frontendUrl + "/");
     }

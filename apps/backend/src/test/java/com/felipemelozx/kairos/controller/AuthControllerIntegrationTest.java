@@ -131,6 +131,32 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
+    void shouldRejectRefreshAfterLogout() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("logout-refresh@example.com", "password123");
+        String refreshToken = cookieValue(login, "REFRESH_TOKEN");
+        String accessToken = cookieValue(login, "ACCESS_TOKEN");
+        String csrfToken = cookieValue(login, "CSRF_TOKEN");
+
+        HttpHeaders logoutHeaders = new HttpHeaders();
+        logoutHeaders.add(HttpHeaders.COOKIE, "ACCESS_TOKEN=" + accessToken + "; CSRF_TOKEN=" + csrfToken);
+        logoutHeaders.add("X-CSRF-Token", csrfToken);
+        logoutHeaders.add(HttpHeaders.ORIGIN, "http://localhost:3000");
+
+        ResponseEntity<ApiResponse> logoutResponse =
+                restTemplate.postForEntity("/auth/logout", new HttpEntity<Void>(logoutHeaders), ApiResponse.class);
+
+        assertThat(logoutResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        HttpHeaders refreshHeaders = new HttpHeaders();
+        refreshHeaders.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=" + refreshToken);
+
+        ResponseEntity<ApiResponse> refreshResponse =
+                restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(refreshHeaders), ApiResponse.class);
+
+        assertThat(refreshResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     void shouldReturn401WhenRefreshTokenInvalid() {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=invalid-token");

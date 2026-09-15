@@ -38,6 +38,9 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "token_version", nullable = false)
+    private Integer tokenVersion = 0;
+
     public User() {
         // Required by JPA/Hibernate
     }
@@ -104,5 +107,13 @@ public class User {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Integer getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(Integer tokenVersion) {
+        this.tokenVersion = tokenVersion;
     }
 }
