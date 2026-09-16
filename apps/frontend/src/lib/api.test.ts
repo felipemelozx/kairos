@@ -31,7 +31,7 @@ describe('apiFetch', () => {
     expect(mockFetch).toHaveBeenCalledWith('/api/test', expect.objectContaining({
       method: 'POST',
       headers: expect.any(Headers),
-      credentials: 'same-origin',
+      credentials: 'include',
     }));
 
     const callHeaders = mockFetch.mock.calls[0][1]?.headers as Headers;
@@ -160,7 +160,7 @@ describe('apiFetch', () => {
     expect(error.details).toEqual({ email: 'Invalid email format' });
   });
 
-  it('should use same-origin credentials', async () => {
+  it('should use include credentials', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       headers: new Headers({ 'content-type': 'application/json' }),
@@ -170,7 +170,80 @@ describe('apiFetch', () => {
     await apiFetch('/api/test');
 
     expect(mockFetch).toHaveBeenCalledWith('/api/test', expect.objectContaining({
-      credentials: 'same-origin',
+      credentials: 'include',
     }));
+  });
+
+  describe('silent refresh on 401', () => {
+    const okJson = (payload: unknown) =>
+      ({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve(payload),
+      }) as Response;
+
+    const unauthorized = () =>
+      ({
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () =>
+          Promise.resolve({
+            success: false,
+            error: { code: 'UNAUTHORIZED', message: 'Not authenticated' },
+          }),
+      }) as Response;
+
+    it('should refresh and retry the original request once', async () => {
+      mockGetCsrfToken.mockReturnValue('token');
+      mockFetch
+        .mockResolvedValueOnce(unauthorized())
+        .mockResolvedValueOnce(okJson({ success: true }))
+        .mockResolvedValueOnce(okJson({ success: true, data: 'retried' }));
+
+      const result = await apiFetch<{ data: string }>('/api/projects');
+
+      expect(result).toEqual({ success: true, data: 'retried' });
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      expect(mockFetch.mock.calls[1][0]).toBe('/api/auth/refresh');
+      expect(mockFetch.mock.calls[1][1]).toMatchObject({
+        method: 'POST',
+        credentials: 'include',
+      });
+      expect(mockFetch.mock.calls[2][0]).toBe('/api/projects');
+    });
+
+    it('should throw the 401 error when refresh fails', async () => {
+      mockGetCsrfToken.mockReturnValue('token');
+      mockFetch
+        .mockResolvedValueOnce(unauthorized())
+        .mockResolvedValueOnce(unauthorized());
+
+      await expect(apiFetch('/api/projects')).rejects.toMatchObject({
+        status: 401,
+        code: 'UNAUTHORIZED',
+      });
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not attempt refresh for login requests', async () => {
+      mockGetCsrfToken.mockReturnValue('token');
+      mockFetch.mockResolvedValueOnce(unauthorized());
+
+      await expect(
+        apiFetch('/api/auth/login', { method: 'POST' })
+      ).rejects.toMatchObject({ status: 401 });
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not attempt refresh for refresh requests', async () => {
+      mockFetch.mockResolvedValueOnce(unauthorized());
+
+      await expect(
+        apiFetch('/api/auth/refresh', { method: 'POST' })
+      ).rejects.toMatchObject({ status: 401 });
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
   });
 });

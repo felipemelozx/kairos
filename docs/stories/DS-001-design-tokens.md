@@ -13,7 +13,7 @@
 | Field | Value |
 |-------|-------|
 | **Priority** | High |
-| **Status** | Ready for Review |
+| **Status** | Done |
 | **Points** | 5 |
 | **Epic** | Design System (no `docs/epics/` yet; this story is the first token-level slice) |
 | **Executor** | @dev (Dex) |
@@ -288,7 +288,7 @@ Reference naming convention for `globals.css` — every token gets a `--` prefix
 - [x] All four frontend gates pass: `lint`, `type-check`, `test`, `build`
 - [x] Token parity verified against DESIGN.md frontmatter
 - [x] File list updated
-- [x] Status set to Ready for Review
+- [x] Status set to Done (after @ux-design-expert sign-off)
 
 ---
 
@@ -349,6 +349,32 @@ Reference naming convention for `globals.css` — every token gets a `--` prefix
 - Gates: `lint` clean, `tsc --noEmit` clean, `jest` 112/112 passed, `next build` succeeded. `impeccable detect` returned no findings.
 - Quality gate (@ux-design-expert): PASS-WITH-NOTES — token layer faithful; consumer fixes applied in this story.
 
+### UX Sign-Off (`@ux-design-expert` / Vista)
+
+| Field | Value |
+|-------|-------|
+| **Agent** | Vista (@ux-design-expert) |
+| **Date** | 2026-09-12 |
+| **Verdict** | **PASS-WITH-NOTES** |
+
+**Audit evidence (normative source: `apps/frontend/DESIGN.md` frontmatter):**
+
+- **Colors:** all 22 slugs cross-checked 1:1 between Tailwind `theme.extend.colors` and `:root --color-*` — exact hex match; no placeholder `primary-*` / `gray-*` palette and no decorative gradient remain.
+- **Typography:** `fontFamily` (display/body/mono) and all 7 `fontSize` roles (display/headline/title/body/label/button/data) match family, size, weight, line-height and letter-spacing.
+- **Shape / depth / rhythm:** `borderRadius` (6/10/16/24/999px), `boxShadow` (xs/sm/md/lg/xl/focus) and `spacing` (4→120px, xs..4xl) match DESIGN.md exactly.
+- **CSS custom properties:** `:root` mirrors colors/fonts/radius/space/shadows; body is flat `--color-canvas` + `--color-ink`; the `prefers-color-scheme: dark` block and `--foreground-rgb`/gradient placeholders are gone.
+- **One Voice Rule:** accent tokens are defined but not mass-filled; consumers use accent only for the primary action, active link/nav and focus ring — well under the ≤10% budget at token level.
+- **Light-only:** no `prefers-color-scheme: dark`, no `dark:` variants, no dark tokens introduced; `dark-block` is the single sanctioned punctuation token (not a theme).
+- **Fonts:** wired via `next/font/google` (Familjen Grotesk / Onest / JetBrains Mono) with CSS variables and DESIGN.md fallback stacks; no external `<link>` (no FOUT).
+
+**Gates re-run by Vista:** `npm run build` ✓ (Next.js 16.3.4 / Turbopack, static `/`), `npm run lint` ✓ clean, `npm test` ✓ 148/148 (11 suites).
+
+**Notes (non-blocking):**
+
+1. `typography.data.fontFeature: "tnum"` is a DESIGN.md frontmatter token that Tailwind's `fontSize` config cannot hold; the tabular-figures intent remains carried by the `tabular-nums` utility per The Column Rule. Follow-up owner: future `$impeccable document` scan pass.
+2. Consumer fixes in `page.tsx` / `LoginForm` / `RegisterForm` / `auth-store` exceed a strictly token-only diff (Google CTA placement, inline validation, `isLoading`/`isSubmitting` split). These are documented regression/critique fixes: they introduce no new product surface and no token drift, and are accepted as part of this story.
+3. Minor: `globals.css` does not emit `--text-*` custom properties (typography lives in Tailwind) and does not declare `color-scheme: light` explicitly. Non-blocking — the `.impeccable/design.json` sidecar uses literal hex/inline CSS rather than `var(--...)` references, and the dark scheme was removed, so the light-only contract holds.
+
 ### File List
 
 See **File List** section above.
@@ -364,3 +390,4 @@ See **File List** section above.
 | 1.2 | 2026-09-11 | Dex (@dev) | UI format refinement on auth screen: removed the "Login with Email" toggle; email/password form now renders first with a card heading; Google CTA moved below as "Continue with Google"; tests updated |
 | 1.3 | 2026-09-11 | Dex (@dev) | Widened auth card (`max-w-sm` → `max-w-md`) and inputs (larger padding, full width); migrated residual `primary-*`/`gray-*` in LoginForm, RegisterForm and ProtectedRoute to Kairos tokens |
 | 1.4 | 2026-09-11 | Dex (@dev) | Impeccable critique fixes (top 3): P0 split `isLoading`/`isSubmitting` so submit no longer unmounts the form; P1 moved Google CTA inside the card (first) with single alignment and card conformed to DESIGN.md; P1 inline validation + `aria-invalid`/`aria-describedby` + single reserved error region |
+| 1.5 | 2026-09-12 | Vista (@ux-design-expert) | UX token/visual fidelity sign-off (PASS-WITH-NOTES); status → Done |

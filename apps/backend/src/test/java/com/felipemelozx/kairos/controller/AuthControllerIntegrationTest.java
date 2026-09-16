@@ -108,6 +108,113 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
+    void shouldScopeRefreshCookieToRefreshPath() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("refresh-path@example.com", "password123");
+
+        String refreshCookie = setCookieHeader(login, "REFRESH_TOKEN");
+        assertThat(refreshCookie).contains("Path=/api/auth/refresh");
+    }
+
+    @Test
+    void shouldRotateRefreshTokenOnRefresh() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("rotate@example.com", "password123");
+        String refreshToken = cookieValue(login, "REFRESH_TOKEN");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=" + refreshToken);
+
+        ResponseEntity<ApiResponse> response =
+                restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(headers), ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(cookieValue(response, "REFRESH_TOKEN")).isNotBlank();
+    }
+
+    @Test
+    void shouldRejectRefreshAfterLogout() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("logout-refresh@example.com", "password123");
+        String refreshToken = cookieValue(login, "REFRESH_TOKEN");
+        String accessToken = cookieValue(login, "ACCESS_TOKEN");
+        String csrfToken = cookieValue(login, "CSRF_TOKEN");
+
+        HttpHeaders logoutHeaders = new HttpHeaders();
+        logoutHeaders.add(HttpHeaders.COOKIE, "ACCESS_TOKEN=" + accessToken + "; CSRF_TOKEN=" + csrfToken);
+        logoutHeaders.add("X-CSRF-Token", csrfToken);
+        logoutHeaders.add(HttpHeaders.ORIGIN, "http://localhost:3000");
+
+        ResponseEntity<ApiResponse> logoutResponse =
+                restTemplate.postForEntity("/auth/logout", new HttpEntity<Void>(logoutHeaders), ApiResponse.class);
+
+        assertThat(logoutResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        HttpHeaders refreshHeaders = new HttpHeaders();
+        refreshHeaders.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=" + refreshToken);
+
+        ResponseEntity<ApiResponse> refreshResponse =
+                restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(refreshHeaders), ApiResponse.class);
+
+        assertThat(refreshResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void shouldReturn401WhenRefreshTokenInvalid() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=invalid-token");
+
+        ResponseEntity<ApiResponse> response =
+                restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(headers), ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void shouldReturn401WhenRefreshTokenMissing() {
+        ResponseEntity<ApiResponse> response =
+                restTemplate.postForEntity("/auth/refresh", HttpEntity.EMPTY, ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void shouldRejectRefreshWhenAccessTokenUsed() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("access-as-refresh@example.com", "password123");
+        String accessToken = cookieValue(login, "ACCESS_TOKEN");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=" + accessToken);
+
+        ResponseEntity<ApiResponse> response =
+                restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(headers), ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void shouldRejectAuthenticatedRequestAfterLogout() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("logout-access@example.com", "password123");
+        String accessToken = cookieValue(login, "ACCESS_TOKEN");
+        String csrfToken = cookieValue(login, "CSRF_TOKEN");
+
+        HttpHeaders logoutHeaders = new HttpHeaders();
+        logoutHeaders.add(HttpHeaders.COOKIE, "ACCESS_TOKEN=" + accessToken + "; CSRF_TOKEN=" + csrfToken);
+        logoutHeaders.add("X-CSRF-Token", csrfToken);
+        logoutHeaders.add(HttpHeaders.ORIGIN, "http://localhost:3000");
+
+        ResponseEntity<ApiResponse> logoutResponse =
+                restTemplate.postForEntity("/auth/logout", new HttpEntity<Void>(logoutHeaders), ApiResponse.class);
+
+        assertThat(logoutResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        HttpHeaders meHeaders = new HttpHeaders();
+        meHeaders.add(HttpHeaders.COOKIE, "ACCESS_TOKEN=" + accessToken);
+
+        ResponseEntity<ApiResponse> meResponse =
+                restTemplate.exchange("/auth/me", HttpMethod.GET, new HttpEntity<Void>(meHeaders), ApiResponse.class);
+
+        assertThat(meResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     void shouldClearCsrfCookieOnLogout() {
         ResponseEntity<ApiResponse> login = registerAndLogin("logout@example.com", "password123");
         String accessToken = cookieValue(login, "ACCESS_TOKEN");

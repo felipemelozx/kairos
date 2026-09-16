@@ -63,6 +63,20 @@ describe('HomePage', () => {
     expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
   });
 
+  it('renders a Projects link when logged in', () => {
+    mockUseAuthStore.mockReturnValue({
+      user: { id: '1', email: 'test@example.com', name: 'Test User', provider: 'LOCAL', active: true, createdAt: '2026-01-01', avatarUrl: null },
+      isLoading: false,
+      logout: jest.fn(),
+    });
+    render(<HomePage />);
+
+    expect(screen.getByRole('link', { name: /projects/i })).toHaveAttribute(
+      'href',
+      '/projects'
+    );
+  });
+
   it('calls logout when clicking logout button', async () => {
     const mockLogout = jest.fn();
     mockUseAuthStore.mockReturnValue({

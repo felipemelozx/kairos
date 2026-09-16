@@ -7,15 +7,20 @@ colors:
   accent-active: "#0A4F49"
   accent-subtle: "#E6F4F2"
   accent-contrast: "#FFFFFF"
-  canvas: "#FAFAF9"
+  canvas: "#FAF8F5"
   surface: "#FFFFFF"
   surface-muted: "#F4F4F2"
   border: "#E7E5E4"
   border-strong: "#D6D3D1"
-  ink: "#0A0A0A"
+  ink: "#111111"
   ink-secondary: "#52525B"
   ink-muted: "#A1A1AA"
   dark-block: "#0B0B0C"
+  brand-violet: "#C4B5DE"
+  brand-peach: "#FFD4B8"
+  brand-green: "#4ADE80"
+  brand-dark: "#111111"
+  brand-light: "#FAF8F5"
   success: "#15803D"
   success-subtle: "#DCFCE7"
   warning: "#B45309"
@@ -26,41 +31,41 @@ colors:
   info-subtle: "#DBEAFE"
 typography:
   display:
-    fontFamily: "Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
+    fontFamily: "Inter, Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
     fontSize: "clamp(2.75rem, 5vw, 4.5rem)"
     fontWeight: 700
     lineHeight: 1.02
     letterSpacing: "-0.02em"
   headline:
-    fontFamily: "Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
+    fontFamily: "Inter, Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
     fontSize: "clamp(1.875rem, 3vw, 2.75rem)"
     fontWeight: 650
     lineHeight: 1.1
     letterSpacing: "-0.01em"
   title:
-    fontFamily: "Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
+    fontFamily: "Inter, Familjen Grotesk, Helvetica Neue, Arial, system-ui, sans-serif"
     fontSize: "1.25rem"
     fontWeight: 600
     lineHeight: 1.3
   body:
-    fontFamily: "Onest, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontFamily: "Inter, Onest, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.6
   label:
-    fontFamily: "JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontFamily: "IBM Plex Mono, JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: "0.75rem"
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "0.12em"
   button:
-    fontFamily: "Onest, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontFamily: "Inter, Onest, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 600
     lineHeight: 1
     letterSpacing: "0.01em"
   data:
-    fontFamily: "JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontFamily: "IBM Plex Mono, JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: 1.4
@@ -82,25 +87,44 @@ spacing:
   4xl: "120px"
 components:
   button-primary:
-    backgroundColor: "{colors.accent}"
-    textColor: "{colors.accent-contrast}"
+    backgroundColor: "{colors.brand-peach}"
+    textColor: "{colors.brand-dark}"
     typography: "{typography.button}"
-    rounded: "{rounded.md}"
+    rounded: "12px"
     padding: "10px 18px"
     height: "40px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
+  button-primary-pill:
+    backgroundColor: "{colors.brand-peach}"
+    textColor: "{colors.brand-dark}"
+    typography: "{typography.button}"
+    rounded: "12px"
+    padding: "16px 28px"
+    height: "52-56px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-md (4px 4px 0 {colors.brand-dark})"
+    icon: "arrow → required, 20px, trailing"
+    scope: "Persuade tier only (landing, auth). NEVER in Operate screens. Never black fills."
   button-primary-hover:
-    backgroundColor: "{colors.accent-hover}"
+    backgroundColor: "#FFCAB0"
+    translate: "-2px -2px with shadow grow to nb-lg (6px 6px 0)"
+  button-primary-pill-hover:
+    backgroundColor: "#FFCAB0"
+    translate: "-2px -2px with shadow grow to nb-lg (6px 6px 0)"
   button-primary-active:
-    backgroundColor: "{colors.accent-active}"
+    backgroundColor: "{colors.brand-peach}"
   button-secondary:
     backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
+    textColor: "{colors.brand-dark}"
     typography: "{typography.button}"
-    rounded: "{rounded.md}"
+    rounded: "12px"
     padding: "10px 18px"
     height: "40px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
   button-secondary-hover:
-    backgroundColor: "{colors.surface-muted}"
+    backgroundColor: "{colors.brand-light}"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.ink-secondary}"
@@ -115,26 +139,55 @@ components:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     typography: "{typography.body}"
-    rounded: "{rounded.md}"
+    rounded: "12px"
     padding: "10px 12px"
     height: "40px"
+    border: "2px solid {colors.brand-dark}"
   card:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.lg}"
+    rounded: "16px"
     padding: "{spacing.lg}"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-md (4px 4px 0 {colors.brand-dark}); hover translate(-2px,-2px) + nb-lg"
+  card-peach:
+    backgroundColor: "{colors.brand-peach}"
+    textColor: "{colors.brand-dark}"
+    rounded: "16px"
+    padding: "{spacing.lg}"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-md (4px 4px 0 {colors.brand-dark})"
+  card-violet:
+    backgroundColor: "{colors.brand-violet}"
+    textColor: "{colors.brand-dark}"
+    rounded: "16px"
+    padding: "{spacing.lg}"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-md (4px 4px 0 {colors.brand-dark})"
   badge:
-    backgroundColor: "{colors.surface-muted}"
-    textColor: "{colors.ink-secondary}"
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.brand-dark}"
     typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "4px 10px"
+    rounded: "8px"
+    padding: "6px 14px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
   badge-accent:
-    backgroundColor: "{colors.accent-subtle}"
-    textColor: "{colors.accent}"
+    backgroundColor: "{colors.brand-violet}"
+    textColor: "{colors.brand-dark}"
     typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "4px 10px"
+    rounded: "8px"
+    padding: "6px 14px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
+  badge-success:
+    backgroundColor: "{colors.brand-green}"
+    textColor: "{colors.brand-dark}"
+    typography: "{typography.label}"
+    rounded: "8px"
+    padding: "6px 14px"
+    border: "2px solid {colors.brand-dark}"
+    shadow: "nb-sm (2px 2px 0 {colors.brand-dark})"
   nav-item:
     backgroundColor: "transparent"
     textColor: "{colors.ink-secondary}"
@@ -214,6 +267,13 @@ The palette is a paper-and-ink neutral field with one meaningful accent and a re
 
 **The One Voice Rule.** The accent occupies ≤10% of any screen. Its rarity is the point; a screen that is 10% verdigris is loud, and one that is 30% is broken.
 
+**The Two-Tier Rule (Persuade vs Operate).** Kairos has two visual tiers that never mix:
+- **Persuade tier (landing, auth):** may use `dark-block` #0B0B0C as a persuasion fill — exactly one black `button-primary-pill` (52-56px, pill 999px, 2px border, hard offset shadow, trailing arrow) per viewport as the primary CTA, plus one static planned-vs-executed proof mock with tinted pastel fills and 2px borders. Verdigris remains for links and secondary actions.
+- **Operate tier (Calendar, Review, Kanban, Projects, all authenticated screens):** quiet ledger only — verdigris #0F766E for posted/executed truth and primary actions (10px radius, 40px, flat at rest), 1px hairline borders, `shadow-sm` at rest, no black pills, no hard shadows, no mascots, no zig-zag, no gamification. The dark block is punctuation only (one per surface max).
+- **Coexistence:** verdigris = truth, black = persuasion. They coexist on landing/auth only; Operate screens never wear black pills.
+
+**The Proof-Mock Rule.** The single persuasive mock on landing is a static planned-vs-executed bar (neutral planned track, verdigris executed fill, mono tabular figures). No mascots, no illustrated characters, no fabricated testimonials/logos/pricing — PRODUCT.md:62 is read as authorizing mockups/badges/code-blocks only, and DESIGN.md wins on mascots/gamification.
+
 ## Typography
 
 **Display Font:** Familjen Grotesk (with "Helvetica Neue", Arial, system-ui, sans-serif)
@@ -268,8 +328,11 @@ The form language is soft and geometric, with radius scaling by the size of the 
 ### Buttons
 - **Shape:** Gently rounded (10px), 40px tall, comfortable horizontal padding (18px).
 - **Primary:** Ledger Verdigris fill, Chalk White text, Onest 600 at 0.9375rem. Hover deepens to #115E59; active presses to #0A4F49.
+- **Primary-Pill (Persuade only):** Midnight Slate #0B0B0C fill, white text, fully round (999px), 52-56px tall, 16px 28px padding, 2px solid border, hard offset shadow (`4px 4px 0 rgba(11,11,12,.9)`), trailing arrow → required. Landing/auth only; never in Operate. Minimum touch target 52px.
 - **Secondary:** Ledger White fill with a 1px Rule Stone border and Carbon Ink text; hover shifts to Faint Stone.
 - **Ghost:** Transparent fill, Graphite text; hover reveals a Verdigris Wash background with verdigris text.
+- **Danger-secondary:** Ledger White fill, 1px Overrun Red border, Overrun Red text; hover Overrun Wash. Used for Delete where a full danger fill would over-claim.
+- **Touch targets:** all interactive controls ≥40px tall; card actions and auth submits ≥44px where possible.
 - **Focus:** Every variant shows `box-shadow: 0 0 0 3px rgba(15,118,110,.25)` on `:focus-visible`.
 
 ### Inputs / Fields
@@ -308,14 +371,14 @@ The running-timer indicator and the auto-stop promise. A round pill on Verdigris
 - **Do** keep planned blocks and their tracks neutral, and overlay executed work in accent.
 - **Do** label states honestly (Beta, Self-hosted, MVP, NEW) and only when the label is true.
 - **Do** keep the accent at or below 10% of any screen (The One Voice Rule).
-- **Do** maintain WCAG AA contrast for text and interactive states.
+- **Do** maintain WCAG AA contrast for text and interactive states. Placeholder and secondary text use Graphite (#52525B, ~7.7:1 on white) — never Faded Graphite (#A1A1AA, 2.56:1) for readable text; Faded Graphite is disabled-only.
 
 ### Don't:
 - **Don't** fabricate testimonials, customer logos, press mentions, or pricing — none exist.
 - **Don't** add mascots, illustrated characters, or celebratory gamification (confetti, streaks, vanity badges).
 - **Don't** imply AI suggestions or automation; Kairos has none.
 - **Don't** use the accent to decorate planned, unexecuted content.
-- **Don't** introduce a dark theme; the dark block is punctuation only, one per surface.
+- **Don't** introduce a dark theme; the dark block is punctuation only, one per surface (Operate), or one primary pill CTA per viewport (Persuade tier).
 - **Don't** use zero-radius or arbitrarily mixed corners within a component family.
 - **Don't** apply the marketing zig-zag composition to Operate screens.
 - **Don't** use proportional figures for time data.

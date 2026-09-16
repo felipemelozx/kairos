@@ -1,5 +1,7 @@
 # AUTH-001: Authentication & Authorization
 
+**Status:** Done (2026-09-12)
+
 ## Story
 
 **As a** user  
@@ -23,7 +25,7 @@
 - [x] Google OAuth2 auto-creates user on first login
 - [x] httpOnly cookies: `ACCESS_TOKEN` (15 min), `REFRESH_TOKEN` (7 days)
 - [x] OpenAPI annotations on all auth endpoints
-- [ ] All tests passing (unit, integration, authorization) — unit tests pass; integration tests require Docker
+- [x] All tests passing (unit, integration, authorization) — verified 2026-09-12 (60 backend + 148 frontend); integration tests run with Testcontainers/Docker; authorization is N/A (single-principal model — see QA Sign-off)
 
 ### Frontend
 
@@ -39,12 +41,12 @@
 
 ### Quality Gates
 
-- [ ] Unit tests: `AuthService`, `UserService` (80%+ coverage)
-- [ ] Integration tests: `UserRepository`, `AuthController` (Testcontainers)
-- [ ] Authorization tests: user B cannot access user A's `/api/auth/me`
-- [ ] Frontend tests: login form, register form, auth context
-- [ ] OpenAPI spec in sync with implementation
-- [ ] Zero lint/typecheck errors
+- [x] Unit tests: `AuthService` (JaCoCo line coverage 100%); `UserService` — **N/A** (no `UserService` class exists in this codebase; auth logic lives in `AuthService`)
+- [x] Integration tests: `UserRepository`, `AuthController` (Testcontainers; Docker available)
+- [ ] Authorization tests: user B cannot access user A's `/api/auth/me` — **N/A**: single-principal model; `/api/auth/me` derives the user from the JWT principal and accepts no user-supplied id, so cross-user access cannot be expressed. `shouldReturnCurrentUserWhenAuthenticated` confirms `/me` returns the authenticated user.
+- [x] Frontend tests: login form, register form, auth context (11 suites / 148 tests)
+- [x] OpenAPI spec in sync with implementation (routes + `@Operation` annotations verified; context-path `/api`)
+- [x] Zero lint/typecheck errors
 
 ---
 
@@ -348,13 +350,32 @@
 
 ## Definition of Done
 
-- [ ] All acceptance criteria met
-- [ ] All tests passing (unit, integration, authorization)
-- [ ] 80%+ code coverage (backend + frontend)
-- [ ] OpenAPI spec in sync with implementation
-- [ ] Zero lint/typecheck errors
-- [ ] Code reviewed by @qa
-- [ ] Documentation updated (README, AGENTS.md if needed)
+- [x] All acceptance criteria met (single-principal authorization items are N/A — see QA Sign-off)
+- [x] All tests passing (unit, integration, authorization) — 60 backend + 148 frontend; authorization N/A
+- [x] 80%+ code coverage (backend line coverage 93.5%, frontend line coverage 98.0% — JaCoCo / Jest reports)
+- [x] OpenAPI spec in sync with implementation
+- [x] Zero lint/typecheck errors
+- [x] Code reviewed by @qa
+- [ ] Documentation updated (README, AGENTS.md if needed) — **N/A**: no project `README.md` exists; `AGENTS.md` already describes the monorepo structure
+
+---
+
+## QA Sign-off
+
+- **Agent:** @qa (Quartz)
+- **Date:** 2026-09-12
+- **Verdict:** PASS (applicable gates)
+- **Evidence:**
+  - Backend: `cd apps/backend && ./mvnw test` → **Tests run: 60, Failures: 0, Errors: 0, Skipped: 0** (Testcontainers PostgreSQL 16.8; Docker available).
+  - Backend coverage — JaCoCo `apps/backend/target/site/jacoco/jacoco.csv`: overall line coverage **93.5%**; `AuthService` **100%** lines (36/36); `AuthController` **97.1%** lines (34/35); `UserRepository` exercised by `UserRepositoryIntegrationTest`.
+  - Frontend: `cd apps/frontend && npm run lint && npm run typecheck && npm test` → lint ✅, typecheck ✅, **11 suites / 148 tests, all passing**.
+  - Frontend coverage — `npx jest --coverage`: overall lines **98.0%**; `auth-store` **100%**; `auth-api` **100%**; `LoginForm` **98.0%**; `RegisterForm` **98.1%**.
+  - OpenAPI: `docs/openapi/auth.yaml` paths (`/api/auth/register|login|logout|refresh|me`) match `AuthController` + `AuthApi` (`@RequestMapping("/auth")` with `server.servlet.context-path: /api`) and the `@Operation` annotations.
+- **N/A items (documented, not counted as passed gates):**
+  - `UserService`: class does not exist; auth logic is in `AuthService`.
+  - Multi-user authorization ("user B accesses user A's `/api/auth/me`"): single-principal system; `/api/auth/me` resolves the user from the JWT subject and accepts no user id, so cross-user access cannot be expressed.
+  - Live Swagger UI / browser E2E / `checkstyle:check`: no E2E runner and no checkstyle plugin configured; OpenAPI sync verified structurally.
+- **Remaining follow-ups:** none blocking; multi-user authorization tests become applicable when project/time-block resources with owner scoping are introduced (story `PROJ-001`).
 
 ---
 
