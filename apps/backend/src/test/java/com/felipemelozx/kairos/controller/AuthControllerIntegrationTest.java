@@ -176,6 +176,45 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
+    void shouldRejectRefreshWhenAccessTokenUsed() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("access-as-refresh@example.com", "password123");
+        String accessToken = cookieValue(login, "ACCESS_TOKEN");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=" + accessToken);
+
+        ResponseEntity<ApiResponse> response =
+                restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(headers), ApiResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void shouldRejectAuthenticatedRequestAfterLogout() {
+        ResponseEntity<ApiResponse> login = registerAndLogin("logout-access@example.com", "password123");
+        String accessToken = cookieValue(login, "ACCESS_TOKEN");
+        String csrfToken = cookieValue(login, "CSRF_TOKEN");
+
+        HttpHeaders logoutHeaders = new HttpHeaders();
+        logoutHeaders.add(HttpHeaders.COOKIE, "ACCESS_TOKEN=" + accessToken + "; CSRF_TOKEN=" + csrfToken);
+        logoutHeaders.add("X-CSRF-Token", csrfToken);
+        logoutHeaders.add(HttpHeaders.ORIGIN, "http://localhost:3000");
+
+        ResponseEntity<ApiResponse> logoutResponse =
+                restTemplate.postForEntity("/auth/logout", new HttpEntity<Void>(logoutHeaders), ApiResponse.class);
+
+        assertThat(logoutResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        HttpHeaders meHeaders = new HttpHeaders();
+        meHeaders.add(HttpHeaders.COOKIE, "ACCESS_TOKEN=" + accessToken);
+
+        ResponseEntity<ApiResponse> meResponse =
+                restTemplate.exchange("/auth/me", HttpMethod.GET, new HttpEntity<Void>(meHeaders), ApiResponse.class);
+
+        assertThat(meResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     void shouldClearCsrfCookieOnLogout() {
         ResponseEntity<ApiResponse> login = registerAndLogin("logout@example.com", "password123");
         String accessToken = cookieValue(login, "ACCESS_TOKEN");

@@ -85,7 +85,8 @@ public class AuthController implements AuthApi {
     public ResponseEntity<ApiResponse<Void>> refresh(
             @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
             HttpServletResponse response) {
-        if (refreshToken == null || !jwtService.validateToken(refreshToken)) {
+        if (refreshToken == null || !jwtService.validateToken(refreshToken)
+                || !jwtService.isRefreshToken(refreshToken)) {
             throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
         }
 
@@ -125,7 +126,8 @@ public class AuthController implements AuthApi {
                 return null;
             }
         }
-        if (refreshToken != null && jwtService.validateToken(refreshToken)) {
+        if (refreshToken != null && jwtService.validateToken(refreshToken)
+                && jwtService.isRefreshToken(refreshToken)) {
             try {
                 return UUID.fromString(jwtService.getUserIdFromToken(refreshToken));
             } catch (IllegalArgumentException e) {
