@@ -32,13 +32,13 @@ const inputDefault = '';
 const inputInvalid = 'border-danger';
 
 const primaryButton =
-  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-brand-peach px-4 py-2.5 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-accent px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-accent-hover active:bg-accent-active focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
 const secondaryButton =
-  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-4 py-2.5 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
 
 const presetBase = 'h-10 w-10 min-h-[40px] min-w-[40px] rounded-xl border-2 border-brand-dark shadow-nb-sm';
-const presetIdle = `${presetBase} transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet`;
-const presetSelected = `${presetBase} ring-2 ring-brand-violet ring-offset-2 ring-offset-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet`;
+const presetIdle = `${presetBase} transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`;
+const presetSelected = `${presetBase} ring-2 ring-accent ring-offset-2 ring-offset-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`;
 
 export function ProjectForm({
   mode,
@@ -83,7 +83,7 @@ export function ProjectForm({
 
     const errors = validateProject(
       { name, description, color },
-      { requireColor: mode === 'create' }
+      { requireColor: true }
     );
     setFieldErrors(errors);
 
@@ -250,7 +250,7 @@ export function ProjectForm({
                 setColor(event.target.value);
                 clearFieldError('color');
               }}
-              className="h-10 w-10 rounded-xl border-2 border-brand-dark bg-white p-1 shadow-nb-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet"
+              className="h-10 w-10 rounded-xl border-2 border-brand-dark bg-white p-1 shadow-nb-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
             />
             <div className="min-w-[8rem] flex-1">
               <label htmlFor="project-color" className="block text-sm font-medium text-ink-secondary mb-1">

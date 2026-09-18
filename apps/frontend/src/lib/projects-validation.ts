@@ -38,7 +38,7 @@ export function validateProject(
   const { requireColor = true } = options;
   const errors: ProjectErrors = {};
   const name = (fields.name ?? '').trim();
-  const description = fields.description ?? '';
+  const description = (fields.description ?? '').trim();
   const color = (fields.color ?? '').trim();
 
   if (!name) {

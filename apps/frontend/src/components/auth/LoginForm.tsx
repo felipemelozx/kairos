@@ -141,14 +141,9 @@ export function LoginForm({
           placeholder="Enter your password"
         />
         <div className="mt-2 flex justify-end">
-          <button
-            type="button"
-            title="Password recovery is not available in MVP — use Google sign-in or contact the maintainer"
-            aria-label="Account recovery — not available in MVP"
-            className="text-sm font-medium text-ink-secondary underline-offset-2 hover:text-ink hover:underline focus:outline-none focus-visible:underline"
-          >
-            Forgot password?
-          </button>
+          <p className="text-sm text-ink-secondary">
+            Password recovery is not available in MVP — use Google sign-in or contact the maintainer.
+          </p>
         </div>
         {fieldErrors.password && (
           <p id="login-password-error" role="alert" className="mt-1 text-sm text-danger">

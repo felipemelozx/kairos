@@ -46,6 +46,7 @@ async function tryRefresh(): Promise<boolean> {
   try {
     const response = await fetch('/api/auth/refresh', {
       method: 'POST',
+      headers: buildHeaders({ method: 'POST' }),
       credentials: 'include',
     });
     return response.ok;

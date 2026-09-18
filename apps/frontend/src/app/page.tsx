@@ -10,6 +10,7 @@ export default function HomePage() {
   const [showRegister, setShowRegister] = useState(false);
   const [draft, setDraft] = useState({ name: '', email: '', password: '' });
   const { user, isLoading, logout } = useAuthStore();
+  const [logoutError, setLogoutError] = useState('');
 
   if (isLoading) {
     return (
@@ -138,11 +139,23 @@ export default function HomePage() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => logout()}
+                  onClick={async () => {
+                    setLogoutError('');
+                    try {
+                      await logout();
+                    } catch {
+                      setLogoutError('Could not log out. Please try again.');
+                    }
+                  }}
                   className="btn-nb-secondary min-h-[40px] w-full text-sm"
                 >
                   Logout
                 </button>
+                {logoutError ? (
+                  <p role="alert" className="mt-2 text-sm text-danger">
+                    {logoutError}
+                  </p>
+                ) : null}
               </div>
             ) : (
               <div className="nb-card mx-auto mt-8 max-w-md p-6 text-left">

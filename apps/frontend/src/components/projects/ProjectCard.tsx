@@ -33,13 +33,13 @@ const badgeActive = 'status-badge live';
 const badgeArchived = 'status-badge neutral';
 
 const ghostButton =
-  'inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-3 py-2 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center gap-1.5 rounded-md px-2.5 py-1.5 text-button text-ink-secondary transition-colors hover:bg-accent-subtle hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
 const dangerSecondaryButton =
-  'inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-3 py-2 text-sm font-bold text-danger shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center gap-1.5 rounded-md px-2.5 py-1.5 text-button text-ink-secondary transition-colors hover:bg-accent-subtle hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
 const primaryButton =
-  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-brand-peach px-4 py-2.5 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md active:translate-x-px active:translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-accent px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-accent-hover active:bg-accent-active focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
 const secondaryButton =
-  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-brand-dark bg-white px-4 py-2 text-sm font-bold text-ink shadow-nb-sm transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-nb-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
 
 export function ProjectCard({
   project,
@@ -137,12 +137,6 @@ export function ProjectCard({
             <span className="font-mono text-data tabular-nums text-ink-secondary">
               {formatCreatedAt(project.createdAt)}
             </span>
-            <span
-              title="Total executed time lands with Work Sessions (SESSION-001)"
-              className="font-mono text-data tabular-nums text-ink-secondary"
-            >
-              Executed —h —
-            </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -190,7 +184,7 @@ export function ProjectCard({
               type="button"
               onClick={() => onDelete(project)}
               aria-label={`Delete ${project.name}`}
-              title="Opens a confirmation dialog. Deletion is permanent in the app."
+              title="Opens a confirmation dialog. This can't be undone in the app."
               className={dangerSecondaryButton}
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
