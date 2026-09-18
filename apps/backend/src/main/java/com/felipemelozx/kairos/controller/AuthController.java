@@ -6,13 +6,11 @@ import com.felipemelozx.kairos.dto.request.RegisterRequest;
 import com.felipemelozx.kairos.dto.response.ApiResponse;
 import com.felipemelozx.kairos.dto.response.UserResponse;
 import com.felipemelozx.kairos.entity.User;
-import com.felipemelozx.kairos.exception.BusinessException;
-import com.felipemelozx.kairos.repository.UserRepository;
-import com.felipemelozx.kairos.security.CookieUtils;
-import com.felipemelozx.kairos.security.csrf.CsrfTokenService;
+import com.felipemelozx.kairos.security.AuthCookieService;
 import com.felipemelozx.kairos.security.jwt.JwtService;
 import com.felipemelozx.kairos.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,76 +25,88 @@ public class AuthController implements AuthApi {
 
     private final AuthService authService;
     private final JwtService jwtService;
-    private final UserRepository userRepository;
-    private final CsrfTokenService csrfTokenService;
+    private final AuthCookieService authCookieService;
 
-    public AuthController(AuthService authService, JwtService jwtService, UserRepository userRepository,
-                          CsrfTokenService csrfTokenService) {
+    public AuthController(AuthService authService, JwtService jwtService,
+                          AuthCookieService authCookieService) {
         this.authService = authService;
         this.jwtService = jwtService;
-        this.userRepository = userRepository;
-        this.csrfTokenService = csrfTokenService;
+        this.authCookieService = authCookieService;
     }
 
     @Override
+    @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(
-            RegisterRequest request,
+            @Valid @RequestBody RegisterRequest request,
             HttpServletResponse response) {
         UserResponse user = authService.register(request);
 
-        UUID userId = user.id();
-        String accessToken = jwtService.generateAccessToken(userId);
-        String refreshToken = jwtService.generateRefreshToken(userId);
-        CookieUtils.addAccessTokenCookie(response, accessToken);
-        CookieUtils.addRefreshTokenCookie(response, refreshToken);
-        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
+        authCookieService.issueAuthCookies(response, user.id(), 0);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(user));
     }
 
     @Override
+    @PostMapping("/login")
     public ResponseEntity<ApiResponse<UserResponse>> login(
-            LoginRequest request,
+            @Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
         UserResponse user = authService.login(request);
 
-        UUID userId = user.id();
-        String accessToken = jwtService.generateAccessToken(userId);
-        String refreshToken = jwtService.generateRefreshToken(userId);
-        CookieUtils.addAccessTokenCookie(response, accessToken);
-        CookieUtils.addRefreshTokenCookie(response, refreshToken);
-        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
+        authCookieService.issueAuthCookies(response, user.id());
 
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
-        CookieUtils.clearCookies(response);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    @Override
-    public ResponseEntity<ApiResponse<Void>> refresh(
-            String refreshToken,
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @AuthenticationPrincipal UserDetails principal,
+            @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
             HttpServletResponse response) {
-        if (refreshToken == null || !jwtService.validateToken(refreshToken)) {
-            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
+        UUID userId = resolveUserId(principal, refreshToken);
+        if (userId != null) {
+            authService.invalidateSession(userId);
         }
+        authCookieService.clearAuthCookies(response);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 
-        String userId = jwtService.getUserIdFromToken(refreshToken);
-        String newAccessToken = jwtService.generateAccessToken(UUID.fromString(userId));
-        CookieUtils.addAccessTokenCookie(response, newAccessToken);
-        CookieUtils.addCsrfTokenCookie(response, csrfTokenService.generateToken());
+    @Override
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<Void>> refresh(
+            @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
+            HttpServletResponse response) {
+        AuthService.RotatedSession session = authService.rotateRefreshToken(refreshToken);
+        authCookieService.issueAuthCookies(response, session.userId(), session.tokenVersion());
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<UserResponse>> me(UserDetails principal) {
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> me(@AuthenticationPrincipal UserDetails principal) {
         UUID userId = UUID.fromString(principal.getUsername());
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("NOT_FOUND", "User not found"));
+        User user = authService.findUserById(userId);
         return ResponseEntity.ok(ApiResponse.success(UserResponse.from(user)));
+    }
+
+    private UUID resolveUserId(UserDetails principal, String refreshToken) {
+        if (principal != null) {
+            try {
+                return UUID.fromString(principal.getUsername());
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        if (refreshToken != null && jwtService.validateToken(refreshToken)
+                && jwtService.isRefreshToken(refreshToken)) {
+            try {
+                return UUID.fromString(jwtService.getUserIdFromToken(refreshToken));
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        return null;
     }
 }

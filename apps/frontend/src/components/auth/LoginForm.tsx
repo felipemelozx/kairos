@@ -14,18 +14,26 @@ import { useAuthStore } from '@/stores/auth-store';
 
 interface LoginFormProps {
   onSwitchToRegister: () => void;
+  initialEmail?: string;
+  initialPassword?: string;
+  onDraftChange?: (draft: { email: string; password: string }) => void;
 }
 
 const LOGIN_FIELD_ORDER: LoginField[] = ['email', 'password'];
 
 const inputBase =
-  'w-full rounded-md border bg-surface px-3.5 py-2.5 text-ink placeholder-ink-muted focus:outline-none focus:ring-2';
-const inputDefault = 'border-border focus:border-accent focus:ring-accent/20';
-const inputInvalid = 'border-danger focus:border-danger focus:ring-danger/20';
+  'input-nb text-ink focus:outline-none';
+const inputDefault = '';
+const inputInvalid = 'border-danger';
 
-export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export function LoginForm({
+  onSwitchToRegister,
+  initialEmail = '',
+  initialPassword = '',
+  onDraftChange,
+}: LoginFormProps) {
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState(initialPassword);
   const [fieldErrors, setFieldErrors] = useState<LoginErrors>({});
   const [formError, setFormError] = useState('');
   const { login, isSubmitting } = useAuthStore();
@@ -95,6 +103,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
+            onDraftChange?.({ email: e.target.value, password });
             clearFieldError('email');
           }}
           required
@@ -122,14 +131,20 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           value={password}
           onChange={(e) => {
             setPassword(e.target.value);
+            onDraftChange?.({ email, password: e.target.value });
             clearFieldError('password');
           }}
           required
           aria-invalid={Boolean(fieldErrors.password)}
           aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
           className={`${inputBase} ${fieldErrors.password ? inputInvalid : inputDefault}`}
-          placeholder="••••••••"
+          placeholder="Enter your password"
         />
+        <div className="mt-2 flex justify-end">
+          <p className="text-sm text-ink-secondary">
+            Password recovery is not available in MVP — use Google sign-in or contact the maintainer.
+          </p>
+        </div>
         {fieldErrors.password && (
           <p id="login-password-error" role="alert" className="mt-1 text-sm text-danger">
             {fieldErrors.password}
@@ -147,16 +162,17 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-md bg-accent px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-persuade min-h-[52px] w-full text-base disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? 'Logging in...' : 'Login'}
+        <span aria-hidden="true">→</span>
       </button>
       <p className="text-center text-sm text-ink-secondary">
         Don&apos;t have an account?{' '}
         <button
           type="button"
           onClick={onSwitchToRegister}
-          className="font-medium text-accent hover:text-accent-hover focus:outline-none focus-visible:underline"
+          className="btn-nb-secondary mt-2 block w-full text-sm"
         >
           Create an account
         </button>

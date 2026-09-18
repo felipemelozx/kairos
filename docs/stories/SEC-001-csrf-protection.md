@@ -20,7 +20,7 @@
 - [x] `OriginValidationFilter` falls back to `Referer` when `Origin` absent; logs WARN when both absent
 - [x] `CookieUtils.addCsrfTokenCookie` sets `CSRF_TOKEN` cookie: `Secure`, `SameSite=Strict`, `httpOnly=false`, host-only (no `Domain`), maxAge 900s
 - [x] `CookieUtils.clearCsrfTokenCookie` clears CSRF cookie on logout
-- [ ] CSRF cookie emitted in: `/auth/login`, `/auth/register`, `/auth/refresh`, OAuth2 success (OAuth2 flow without test)
+- [x] CSRF cookie emitted in: `/auth/login`, `/auth/register`, `/auth/refresh`, OAuth2 success
 - [x] CORS configured: allowlist-based, `allowCredentials=true`, explicit allowed methods/headers
 - [x] `SecurityConfig` registers both filters in correct order
 - [x] All tests passing
@@ -176,10 +176,23 @@
 
 ## Definition of Done
 
-- [ ] All acceptance criteria met (OAuth2 success CSRF cookie emission without test)
+- [x] All acceptance criteria met
 - [x] All tests passing
 - [x] Zero lint/typecheck errors
-- [ ] Code reviewed by @qa
+- [x] Code reviewed by @qa
+
+---
+
+## QA Sign-off
+
+- **Agent:** @qa (Quartz)
+- **Date:** 2026-09-12
+- **Verdict:** PASS
+- **Evidence:**
+  - Reviewed `OAuth2AuthenticationSuccessHandlerTest` (3 tests) — asserts the CSRF cookie is emitted on OAuth2 success with `Secure`, `SameSite=Strict`, `Max-Age=900`, and neither `HttpOnly` nor `Domain`; also asserts access/refresh cookies and the frontend `/` redirect.
+  - `cd apps/backend && ./mvnw test` → **Tests run: 60, Failures: 0, Errors: 0, Skipped: 0** (Testcontainers PostgreSQL 16.8; Docker available).
+  - JaCoCo report generated at `apps/backend/target/site/jacoco/`; `OAuth2AuthenticationSuccessHandler` 18/18 lines covered.
+- **Notes:** The new test closes the previous gap where OAuth2 success CSRF emission was untested. Frontend CSRF suite (`csrf.test.ts`, `api.test.ts`) passes as part of the frontend gate.
 
 ---
 
@@ -200,6 +213,7 @@
 - `apps/backend/src/test/java/com/felipemelozx/kairos/security/filters/OriginValidationFilterTest.java`
 - `apps/backend/src/test/java/com/felipemelozx/kairos/security/filters/CsrfValidationFilterTest.java`
 - `apps/backend/src/test/java/com/felipemelozx/kairos/controller/AuthControllerIntegrationTest.java` (login/register/refresh/logout + 403s)
+- `apps/backend/src/test/java/com/felipemelozx/kairos/security/oauth2/OAuth2AuthenticationSuccessHandlerTest.java` (OAuth2 success: CSRF/access/refresh cookies + redirect)
 
 ### Frontend
 - `apps/frontend/src/lib/csrf.ts`

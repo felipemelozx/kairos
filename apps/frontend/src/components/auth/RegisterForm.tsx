@@ -15,19 +15,29 @@ import { useAuthStore } from '@/stores/auth-store';
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
+  initialName?: string;
+  initialEmail?: string;
+  initialPassword?: string;
+  onDraftChange?: (draft: { name: string; email: string; password: string }) => void;
 }
 
 const REGISTER_FIELD_ORDER: RegisterField[] = ['name', 'email', 'password'];
 
 const inputBase =
-  'w-full rounded-md border bg-surface px-3.5 py-2.5 text-ink placeholder-ink-muted focus:outline-none focus:ring-2';
-const inputDefault = 'border-border focus:border-accent focus:ring-accent/20';
-const inputInvalid = 'border-danger focus:border-danger focus:ring-danger/20';
+  'input-nb text-ink focus:outline-none';
+const inputDefault = '';
+const inputInvalid = 'border-danger';
 
-export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export function RegisterForm({
+  onSwitchToLogin,
+  initialName = '',
+  initialEmail = '',
+  initialPassword = '',
+  onDraftChange,
+}: RegisterFormProps) {
+  const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState(initialPassword);
   const [fieldErrors, setFieldErrors] = useState<RegisterErrors>({});
   const [formError, setFormError] = useState('');
   const { register, isSubmitting } = useAuthStore();
@@ -100,6 +110,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           value={name}
           onChange={(e) => {
             setName(e.target.value);
+            onDraftChange?.({ name: e.target.value, email, password });
             clearFieldError('name');
           }}
           required
@@ -127,6 +138,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
+            onDraftChange?.({ name, email: e.target.value, password });
             clearFieldError('email');
           }}
           required
@@ -154,6 +166,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           value={password}
           onChange={(e) => {
             setPassword(e.target.value);
+            onDraftChange?.({ name, email, password: e.target.value });
             clearFieldError('password');
           }}
           required
@@ -180,16 +193,17 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-md bg-accent px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-persuade min-h-[52px] w-full text-base disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? 'Creating account...' : 'Register'}
+        <span aria-hidden="true">→</span>
       </button>
       <p className="text-center text-sm text-ink-secondary">
         Already have an account?{' '}
         <button
           type="button"
           onClick={onSwitchToLogin}
-          className="font-medium text-accent hover:text-accent-hover focus:outline-none focus-visible:underline"
+          className="btn-nb-secondary mt-2 block w-full text-sm"
         >
           Sign in
         </button>

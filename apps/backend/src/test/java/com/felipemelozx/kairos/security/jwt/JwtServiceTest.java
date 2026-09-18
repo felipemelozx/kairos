@@ -60,4 +60,16 @@ class JwtServiceTest {
         assertThat(token).isNotNull();
         assertThat(jwtService.validateToken(token)).isTrue();
     }
+
+    @Test
+    void shouldSeparateAccessAndRefreshTokenTypes() {
+        UUID userId = UUID.randomUUID();
+        String accessToken = jwtService.generateAccessToken(userId);
+        String refreshToken = jwtService.generateRefreshToken(userId);
+
+        assertThat(jwtService.isAccessToken(accessToken)).isTrue();
+        assertThat(jwtService.isRefreshToken(accessToken)).isFalse();
+        assertThat(jwtService.isRefreshToken(refreshToken)).isTrue();
+        assertThat(jwtService.isAccessToken(refreshToken)).isFalse();
+    }
 }

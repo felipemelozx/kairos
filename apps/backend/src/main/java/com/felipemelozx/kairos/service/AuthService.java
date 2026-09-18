@@ -81,6 +81,49 @@ public class AuthService {
         return UserResponse.from(saved);
     }
 
+    @Transactional
+    public void invalidateSession(java.util.UUID userId) {
+        userRepository.findByIdForUpdate(userId).ifPresent(user -> {
+            int current = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
+            user.setTokenVersion(current + 1);
+            userRepository.save(user);
+        });
+    }
+
+    public record RotatedSession(java.util.UUID userId, int tokenVersion) {}
+
+    @Transactional
+    public RotatedSession rotateRefreshToken(String refreshToken) {
+        if (refreshToken == null || !jwtService.validateToken(refreshToken)
+                || !jwtService.isRefreshToken(refreshToken)) {
+            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
+        }
+        String userId = jwtService.getUserIdFromToken(refreshToken);
+        int tokenVersion = jwtService.getTokenVersionFromToken(refreshToken);
+        java.util.UUID id;
+        try {
+            id = java.util.UUID.fromString(userId);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
+        }
+        User user = userRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid"));
+        int currentVersion = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
+        if (tokenVersion != currentVersion) {
+            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
+        }
+        int nextVersion = currentVersion + 1;
+        user.setTokenVersion(nextVersion);
+        userRepository.save(user);
+        return new RotatedSession(id, nextVersion);
+    }
+
+    @Transactional(readOnly = true)
+    public User findUserById(java.util.UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("NOT_FOUND", "User not found"));
+    }
+
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
     }
