@@ -108,11 +108,11 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    void shouldScopeRefreshCookieToRefreshPath() {
+    void shouldScopeRefreshCookieToAuthPath() {
         ResponseEntity<ApiResponse> login = registerAndLogin("refresh-path@example.com", "password123");
 
         String refreshCookie = setCookieHeader(login, "REFRESH_TOKEN");
-        assertThat(refreshCookie).contains("Path=/api/auth/refresh");
+        assertThat(refreshCookie).contains("Path=/api/auth");
     }
 
     @Test
@@ -127,7 +127,17 @@ class AuthControllerIntegrationTest {
                 restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(headers), ApiResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(cookieValue(response, "REFRESH_TOKEN")).isNotBlank();
+        String rotatedToken = cookieValue(response, "REFRESH_TOKEN");
+        assertThat(rotatedToken).isNotBlank();
+        assertThat(rotatedToken).isNotEqualTo(refreshToken);
+
+        HttpHeaders replayHeaders = new HttpHeaders();
+        replayHeaders.add(HttpHeaders.COOKIE, "REFRESH_TOKEN=" + refreshToken);
+
+        ResponseEntity<ApiResponse> replayResponse =
+                restTemplate.postForEntity("/auth/refresh", new HttpEntity<Void>(replayHeaders), ApiResponse.class);
+
+        assertThat(replayResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test

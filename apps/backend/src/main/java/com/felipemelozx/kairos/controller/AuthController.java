@@ -6,8 +6,6 @@ import com.felipemelozx.kairos.dto.request.RegisterRequest;
 import com.felipemelozx.kairos.dto.response.ApiResponse;
 import com.felipemelozx.kairos.dto.response.UserResponse;
 import com.felipemelozx.kairos.entity.User;
-import com.felipemelozx.kairos.exception.BusinessException;
-import com.felipemelozx.kairos.repository.UserRepository;
 import com.felipemelozx.kairos.security.AuthCookieService;
 import com.felipemelozx.kairos.security.jwt.JwtService;
 import com.felipemelozx.kairos.service.AuthService;
@@ -27,14 +25,12 @@ public class AuthController implements AuthApi {
 
     private final AuthService authService;
     private final JwtService jwtService;
-    private final UserRepository userRepository;
     private final AuthCookieService authCookieService;
 
-    public AuthController(AuthService authService, JwtService jwtService, UserRepository userRepository,
+    public AuthController(AuthService authService, JwtService jwtService,
                           AuthCookieService authCookieService) {
         this.authService = authService;
         this.jwtService = jwtService;
-        this.userRepository = userRepository;
         this.authCookieService = authCookieService;
     }
 
@@ -70,11 +66,7 @@ public class AuthController implements AuthApi {
             HttpServletResponse response) {
         UUID userId = resolveUserId(principal, refreshToken);
         if (userId != null) {
-            userRepository.findById(userId).ifPresent(user -> {
-                int current = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
-                user.setTokenVersion(current + 1);
-                userRepository.save(user);
-            });
+            authService.invalidateSession(userId);
         }
         authCookieService.clearAuthCookies(response);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -85,26 +77,8 @@ public class AuthController implements AuthApi {
     public ResponseEntity<ApiResponse<Void>> refresh(
             @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
             HttpServletResponse response) {
-        if (refreshToken == null || !jwtService.validateToken(refreshToken)
-                || !jwtService.isRefreshToken(refreshToken)) {
-            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
-        }
-
-        String userId = jwtService.getUserIdFromToken(refreshToken);
-        int tokenVersion = jwtService.getTokenVersionFromToken(refreshToken);
-        UUID id;
-        try {
-            id = UUID.fromString(userId);
-        } catch (IllegalArgumentException e) {
-            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
-        }
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid"));
-        int currentVersion = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
-        if (tokenVersion != currentVersion) {
-            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
-        }
-        authCookieService.issueAuthCookies(response, id, currentVersion);
+        UUID id = authService.rotateRefreshToken(refreshToken);
+        authCookieService.issueAuthCookies(response, id);
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -113,8 +87,7 @@ public class AuthController implements AuthApi {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> me(@AuthenticationPrincipal UserDetails principal) {
         UUID userId = UUID.fromString(principal.getUsername());
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("NOT_FOUND", "User not found"));
+        User user = authService.findUserById(userId);
         return ResponseEntity.ok(ApiResponse.success(UserResponse.from(user)));
     }
 

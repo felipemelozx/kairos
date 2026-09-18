@@ -13,10 +13,10 @@ public class CookieUtils {
     private static final String REFRESH_TOKEN_COOKIE = "REFRESH_TOKEN";
     private static final String CSRF_TOKEN_COOKIE = "CSRF_TOKEN";
     private static final String SAME_SITE_STRICT = "Strict";
-    // Must include server.servlet.context-path (/api): browsers only send the
-    // cookie when the request path matches, so "/auth/refresh" would never be
-    // sent to "/api/auth/refresh" and refresh would always fail.
-    private static final String REFRESH_COOKIE_PATH = "/api/auth/refresh";
+    // Shared parent path so the cookie is sent to both /api/auth/refresh
+    // and /api/auth/logout (a narrower path would hide it from logout,
+    // leaving a stolen refresh token valid after logout).
+    private static final String REFRESH_COOKIE_PATH = "/api/auth";
 
     public static void addAccessTokenCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, token)
