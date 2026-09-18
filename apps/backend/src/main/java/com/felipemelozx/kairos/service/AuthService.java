@@ -83,15 +83,17 @@ public class AuthService {
 
     @Transactional
     public void invalidateSession(java.util.UUID userId) {
-        userRepository.findById(userId).ifPresent(user -> {
+        userRepository.findByIdForUpdate(userId).ifPresent(user -> {
             int current = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
             user.setTokenVersion(current + 1);
             userRepository.save(user);
         });
     }
 
+    public record RotatedSession(java.util.UUID userId, int tokenVersion) {}
+
     @Transactional
-    public java.util.UUID rotateRefreshToken(String refreshToken) {
+    public RotatedSession rotateRefreshToken(String refreshToken) {
         if (refreshToken == null || !jwtService.validateToken(refreshToken)
                 || !jwtService.isRefreshToken(refreshToken)) {
             throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
@@ -104,15 +106,16 @@ public class AuthService {
         } catch (IllegalArgumentException e) {
             throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
         }
-        User user = userRepository.findById(id)
+        User user = userRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid"));
         int currentVersion = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
         if (tokenVersion != currentVersion) {
             throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
         }
-        user.setTokenVersion(currentVersion + 1);
+        int nextVersion = currentVersion + 1;
+        user.setTokenVersion(nextVersion);
         userRepository.save(user);
-        return id;
+        return new RotatedSession(id, nextVersion);
     }
 
     @Transactional(readOnly = true)

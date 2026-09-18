@@ -26,7 +26,7 @@ export function ProjectDeleteDialog({ project, onCancel, onConfirm }: ProjectDel
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !isDeleting) {
         event.preventDefault();
         onCancel();
         return;
@@ -52,7 +52,7 @@ export function ProjectDeleteDialog({ project, onCancel, onConfirm }: ProjectDel
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onCancel]);
+  }, [isDeleting, onCancel]);
 
   const handleConfirm = async () => {
     setIsDeleting(true);
@@ -70,7 +70,11 @@ export function ProjectDeleteDialog({ project, onCancel, onConfirm }: ProjectDel
       <button
         type="button"
         aria-label="Close delete dialog"
-        onClick={onCancel}
+        onClick={() => {
+          if (!isDeleting) {
+            onCancel();
+          }
+        }}
         tabIndex={-1}
         className="absolute inset-0 cursor-default bg-ink/40"
       />

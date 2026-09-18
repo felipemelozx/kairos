@@ -77,8 +77,8 @@ public class AuthController implements AuthApi {
     public ResponseEntity<ApiResponse<Void>> refresh(
             @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
             HttpServletResponse response) {
-        UUID id = authService.rotateRefreshToken(refreshToken);
-        authCookieService.issueAuthCookies(response, id);
+        AuthService.RotatedSession session = authService.rotateRefreshToken(refreshToken);
+        authCookieService.issueAuthCookies(response, session.userId(), session.tokenVersion());
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }
