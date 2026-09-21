@@ -1,11 +1,13 @@
 package com.felipemelozx.kairos.controller;
 
 import com.felipemelozx.kairos.api.ProjectApi;
+import com.felipemelozx.kairos.common.AppError;
+import com.felipemelozx.kairos.common.ErrorCode;
+import com.felipemelozx.kairos.common.Result;
 import com.felipemelozx.kairos.dto.request.CreateProjectRequest;
 import com.felipemelozx.kairos.dto.request.UpdateProjectRequest;
 import com.felipemelozx.kairos.dto.response.ApiResponse;
 import com.felipemelozx.kairos.dto.response.ProjectResponse;
-import com.felipemelozx.kairos.exception.BusinessException;
 import com.felipemelozx.kairos.service.ProjectService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -39,17 +41,26 @@ public class ProjectController implements ProjectApi {
     public ResponseEntity<ApiResponse<ProjectResponse>> create(
             @Valid @RequestBody CreateProjectRequest request,
             @AuthenticationPrincipal UserDetails principal) {
-        UUID userId = currentUserId(principal);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(projectService.create(userId, request)));
+        Result<UUID> userId = currentUserId(principal);
+        if (userId instanceof Result.Err<UUID> err) {
+            return err.error().toResponse();
+        }
+        UUID id = ((Result.Ok<UUID>) userId).value();
+        return projectService.create(id, request).fold(
+                project -> ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(project)),
+                AppError::toResponse);
     }
 
     @Override
     @GetMapping
     public ResponseEntity<ApiResponse<List<ProjectResponse>>> list(
             @AuthenticationPrincipal UserDetails principal) {
-        UUID userId = currentUserId(principal);
-        return ResponseEntity.ok(ApiResponse.success(projectService.listByUser(userId)));
+        Result<UUID> userId = currentUserId(principal);
+        if (userId instanceof Result.Err<UUID> err) {
+            return err.error().toResponse();
+        }
+        UUID id = ((Result.Ok<UUID>) userId).value();
+        return ResponseEntity.ok(ApiResponse.success(projectService.listByUser(id)));
     }
 
     @Override
@@ -57,8 +68,14 @@ public class ProjectController implements ProjectApi {
     public ResponseEntity<ApiResponse<ProjectResponse>> get(
             @PathVariable("projectId") UUID projectId,
             @AuthenticationPrincipal UserDetails principal) {
-        UUID userId = currentUserId(principal);
-        return ResponseEntity.ok(ApiResponse.success(projectService.getById(projectId, userId)));
+        Result<UUID> userId = currentUserId(principal);
+        if (userId instanceof Result.Err<UUID> err) {
+            return err.error().toResponse();
+        }
+        UUID id = ((Result.Ok<UUID>) userId).value();
+        return projectService.getById(projectId, id).fold(
+                project -> ResponseEntity.ok(ApiResponse.success(project)),
+                AppError::toResponse);
     }
 
     @Override
@@ -67,8 +84,14 @@ public class ProjectController implements ProjectApi {
             @PathVariable("projectId") UUID projectId,
             @Valid @RequestBody UpdateProjectRequest request,
             @AuthenticationPrincipal UserDetails principal) {
-        UUID userId = currentUserId(principal);
-        return ResponseEntity.ok(ApiResponse.success(projectService.update(projectId, userId, request)));
+        Result<UUID> userId = currentUserId(principal);
+        if (userId instanceof Result.Err<UUID> err) {
+            return err.error().toResponse();
+        }
+        UUID id = ((Result.Ok<UUID>) userId).value();
+        return projectService.update(projectId, id, request).fold(
+                project -> ResponseEntity.ok(ApiResponse.success(project)),
+                AppError::toResponse);
     }
 
     @Override
@@ -76,19 +99,24 @@ public class ProjectController implements ProjectApi {
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable("projectId") UUID projectId,
             @AuthenticationPrincipal UserDetails principal) {
-        UUID userId = currentUserId(principal);
-        projectService.softDelete(projectId, userId);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Result<UUID> userId = currentUserId(principal);
+        if (userId instanceof Result.Err<UUID> err) {
+            return err.error().toResponse();
+        }
+        UUID id = ((Result.Ok<UUID>) userId).value();
+        return projectService.softDelete(projectId, id).fold(
+                ignored -> ResponseEntity.ok(ApiResponse.success(null)),
+                AppError::toResponse);
     }
 
-    private UUID currentUserId(UserDetails principal) {
+    private Result<UUID> currentUserId(UserDetails principal) {
         if (principal == null || principal.getUsername() == null) {
-            throw new BusinessException("UNAUTHORIZED", "Not authenticated");
+            return Result.err(ErrorCode.UNAUTHORIZED);
         }
         try {
-            return UUID.fromString(principal.getUsername());
+            return Result.ok(UUID.fromString(principal.getUsername()));
         } catch (IllegalArgumentException ex) {
-            throw new BusinessException("UNAUTHORIZED", "Not authenticated");
+            return Result.err(ErrorCode.UNAUTHORIZED);
         }
     }
 }

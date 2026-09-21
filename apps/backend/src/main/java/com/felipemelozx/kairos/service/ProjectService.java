@@ -1,11 +1,13 @@
 package com.felipemelozx.kairos.service;
 
+import com.felipemelozx.kairos.common.AppError;
+import com.felipemelozx.kairos.common.ErrorCode;
+import com.felipemelozx.kairos.common.Result;
 import com.felipemelozx.kairos.dto.request.CreateProjectRequest;
 import com.felipemelozx.kairos.dto.request.UpdateProjectRequest;
 import com.felipemelozx.kairos.dto.response.ProjectResponse;
 import com.felipemelozx.kairos.entity.Project;
 import com.felipemelozx.kairos.entity.enums.ProjectStatus;
-import com.felipemelozx.kairos.exception.BusinessException;
 import com.felipemelozx.kairos.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,10 +33,16 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse create(UUID userId, CreateProjectRequest request) {
+    public Result<ProjectResponse> create(UUID userId, CreateProjectRequest request) {
         log.info("Creating project for userId={}", userId);
-        validateName(request.name());
-        validateColor(request.color());
+        Result<Void> nameCheck = validateName(request.name());
+        if (nameCheck instanceof Result.Err<Void> err) {
+            return Result.err(err.error());
+        }
+        Result<Void> colorCheck = validateColor(request.color());
+        if (colorCheck instanceof Result.Err<Void> err) {
+            return Result.err(err.error());
+        }
 
         Project project = new Project();
         project.setUserId(userId);
@@ -46,7 +54,7 @@ public class ProjectService {
 
         Project saved = projectRepository.save(project);
         log.info("Project created: id={}, userId={}", saved.getId(), userId);
-        return ProjectResponse.from(saved);
+        return Result.ok(ProjectResponse.from(saved));
     }
 
     @Transactional(readOnly = true)
@@ -61,28 +69,37 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    public ProjectResponse getById(UUID id, UUID userId) {
+    public Result<ProjectResponse> getById(UUID id, UUID userId) {
         log.info("Fetching project: id={}, userId={}", id, userId);
-        Project project = projectRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId)
-                .orElseThrow(() -> new BusinessException("NOT_FOUND", "Project not found"));
-        return ProjectResponse.from(project);
+        return projectRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId)
+                .map(project -> Result.<ProjectResponse>ok(ProjectResponse.from(project)))
+                .orElseGet(() -> Result.err(ErrorCode.NOT_FOUND, "Project not found"));
     }
 
     @Transactional
-    public ProjectResponse update(UUID id, UUID userId, UpdateProjectRequest request) {
+    public Result<ProjectResponse> update(UUID id, UUID userId, UpdateProjectRequest request) {
         log.info("Updating project: id={}, userId={}", id, userId);
-        Project project = projectRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId)
-                .orElseThrow(() -> new BusinessException("NOT_FOUND", "Project not found"));
+        var maybeProject = projectRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId);
+        if (maybeProject.isEmpty()) {
+            return Result.err(ErrorCode.NOT_FOUND, "Project not found");
+        }
+        Project project = maybeProject.get();
 
         if (request.name() != null) {
-            validateName(request.name());
+            Result<Void> nameCheck = validateName(request.name());
+            if (nameCheck instanceof Result.Err<Void> err) {
+                return Result.err(err.error());
+            }
             project.setName(request.name());
         }
         if (request.description() != null) {
             project.setDescription(request.description());
         }
         if (request.color() != null) {
-            validateColor(request.color());
+            Result<Void> colorCheck = validateColor(request.color());
+            if (colorCheck instanceof Result.Err<Void> err) {
+                return Result.err(err.error());
+            }
             project.setColor(request.color());
         }
         if (request.status() != null) {
@@ -91,29 +108,33 @@ public class ProjectService {
 
         Project saved = projectRepository.save(project);
         log.info("Project updated: id={}, userId={}", saved.getId(), userId);
-        return ProjectResponse.from(saved);
+        return Result.ok(ProjectResponse.from(saved));
     }
 
     @Transactional
-    public void softDelete(UUID id, UUID userId) {
+    public Result<Void> softDelete(UUID id, UUID userId) {
         log.info("Deleting project: id={}, userId={}", id, userId);
-        projectRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId)
-                .orElseThrow(() -> new BusinessException("NOT_FOUND", "Project not found"));
+        if (projectRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId).isEmpty()) {
+            return Result.err(ErrorCode.NOT_FOUND, "Project not found");
+        }
 
         projectRepository.softDeleteByIdAndUserId(id, userId, Instant.now());
         log.info("Project soft deleted: id={}, userId={}", id, userId);
+        return Result.ok(null);
     }
 
-    private void validateName(String name) {
+    private Result<Void> validateName(String name) {
         if (name == null || name.isBlank() || name.length() > MAX_NAME_LENGTH) {
-            throw new BusinessException("INVALID_PROJECT_NAME",
-                    "Project name must be between 1 and " + MAX_NAME_LENGTH + " characters");
+            return Result.err(AppError.of(ErrorCode.INVALID_PROJECT_NAME,
+                    "Project name must be between 1 and " + MAX_NAME_LENGTH + " characters"));
         }
+        return Result.ok(null);
     }
 
-    private void validateColor(String color) {
+    private Result<Void> validateColor(String color) {
         if (color == null || !COLOR_PATTERN.matcher(color).matches()) {
-            throw new BusinessException("INVALID_COLOR", "Color must be a valid hex color (#RRGGBB)");
+            return Result.err(ErrorCode.INVALID_COLOR);
         }
+        return Result.ok(null);
     }
 }
