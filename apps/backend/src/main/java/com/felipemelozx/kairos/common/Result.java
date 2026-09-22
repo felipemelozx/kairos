@@ -10,7 +10,7 @@ import java.util.function.Function;
  * Result&lt;UserResponse&gt; result = authService.login(request);
  * return switch (result) {
  *     case Result.Ok&lt;UserResponse&gt; ok -&gt; ResponseEntity.ok(ApiResponse.success(ok.value()));
- *     case Result.Err&lt;UserResponse&gt; err -&gt; err.error().toResponse();
+ *     case Result.Err&lt;UserResponse&gt; err -&gt; HttpErrorMapper.toResponse(err.error());
  * };
  * </pre>
  */

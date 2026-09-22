@@ -1,7 +1,6 @@
 package com.felipemelozx.kairos.controller;
 
 import com.felipemelozx.kairos.api.AuthApi;
-import com.felipemelozx.kairos.common.AppError;
 import com.felipemelozx.kairos.common.Result;
 import com.felipemelozx.kairos.dto.request.LoginRequest;
 import com.felipemelozx.kairos.dto.request.RegisterRequest;
@@ -45,7 +44,7 @@ public class AuthController implements AuthApi {
                     authCookieService.issueAuthCookies(response, user.id(), 0);
                     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(user));
                 },
-                AppError::toResponse);
+                HttpErrorMapper::toResponse);
     }
 
     @Override
@@ -58,7 +57,7 @@ public class AuthController implements AuthApi {
                     authCookieService.issueAuthCookies(response, user.id());
                     return ResponseEntity.ok(ApiResponse.success(user));
                 },
-                AppError::toResponse);
+                HttpErrorMapper::toResponse);
     }
 
     @Override
@@ -85,7 +84,7 @@ public class AuthController implements AuthApi {
                     authCookieService.issueAuthCookies(response, session.userId(), session.tokenVersion());
                     return ResponseEntity.ok(ApiResponse.success(null));
                 },
-                AppError::toResponse);
+                HttpErrorMapper::toResponse);
     }
 
     @Override
@@ -94,7 +93,7 @@ public class AuthController implements AuthApi {
         UUID userId = UUID.fromString(principal.getUsername());
         return authService.findUserById(userId).fold(
                 user -> ResponseEntity.ok(ApiResponse.success(UserResponse.from(user))),
-                AppError::toResponse);
+                HttpErrorMapper::toResponse);
     }
 
     private UUID resolveUserId(UserDetails principal, String refreshToken) {

@@ -1,7 +1,6 @@
 package com.felipemelozx.kairos.controller;
 
 import com.felipemelozx.kairos.api.ProjectApi;
-import com.felipemelozx.kairos.common.AppError;
 import com.felipemelozx.kairos.common.ErrorCode;
 import com.felipemelozx.kairos.common.Result;
 import com.felipemelozx.kairos.dto.request.CreateProjectRequest;
@@ -43,12 +42,12 @@ public class ProjectController implements ProjectApi {
             @AuthenticationPrincipal UserDetails principal) {
         Result<UUID> userId = currentUserId(principal);
         if (userId instanceof Result.Err<UUID> err) {
-            return err.error().toResponse();
+            return HttpErrorMapper.toResponse(err.error());
         }
         UUID id = ((Result.Ok<UUID>) userId).value();
         return projectService.create(id, request).fold(
                 project -> ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(project)),
-                AppError::toResponse);
+                HttpErrorMapper::toResponse);
     }
 
     @Override
@@ -57,7 +56,7 @@ public class ProjectController implements ProjectApi {
             @AuthenticationPrincipal UserDetails principal) {
         Result<UUID> userId = currentUserId(principal);
         if (userId instanceof Result.Err<UUID> err) {
-            return err.error().toResponse();
+            return HttpErrorMapper.toResponse(err.error());
         }
         UUID id = ((Result.Ok<UUID>) userId).value();
         return ResponseEntity.ok(ApiResponse.success(projectService.listByUser(id)));
@@ -70,12 +69,12 @@ public class ProjectController implements ProjectApi {
             @AuthenticationPrincipal UserDetails principal) {
         Result<UUID> userId = currentUserId(principal);
         if (userId instanceof Result.Err<UUID> err) {
-            return err.error().toResponse();
+            return HttpErrorMapper.toResponse(err.error());
         }
         UUID id = ((Result.Ok<UUID>) userId).value();
         return projectService.getById(projectId, id).fold(
                 project -> ResponseEntity.ok(ApiResponse.success(project)),
-                AppError::toResponse);
+                HttpErrorMapper::toResponse);
     }
 
     @Override
@@ -86,12 +85,12 @@ public class ProjectController implements ProjectApi {
             @AuthenticationPrincipal UserDetails principal) {
         Result<UUID> userId = currentUserId(principal);
         if (userId instanceof Result.Err<UUID> err) {
-            return err.error().toResponse();
+            return HttpErrorMapper.toResponse(err.error());
         }
         UUID id = ((Result.Ok<UUID>) userId).value();
         return projectService.update(projectId, id, request).fold(
                 project -> ResponseEntity.ok(ApiResponse.success(project)),
-                AppError::toResponse);
+                HttpErrorMapper::toResponse);
     }
 
     @Override
@@ -101,12 +100,12 @@ public class ProjectController implements ProjectApi {
             @AuthenticationPrincipal UserDetails principal) {
         Result<UUID> userId = currentUserId(principal);
         if (userId instanceof Result.Err<UUID> err) {
-            return err.error().toResponse();
+            return HttpErrorMapper.toResponse(err.error());
         }
         UUID id = ((Result.Ok<UUID>) userId).value();
         return projectService.softDelete(projectId, id).fold(
                 ignored -> ResponseEntity.ok(ApiResponse.success(null)),
-                AppError::toResponse);
+                HttpErrorMapper::toResponse);
     }
 
     private Result<UUID> currentUserId(UserDetails principal) {
