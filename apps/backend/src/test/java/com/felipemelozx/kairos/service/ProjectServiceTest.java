@@ -173,6 +173,25 @@ class ProjectServiceTest {
     }
 
     @Test
+    void shouldNotMutateManagedEntityWhenUpdateValidationFails() {
+        UUID userId = UUID.randomUUID();
+        Project project = project(userId, ProjectStatus.ACTIVE);
+        when(projectRepository.findByIdAndUserIdAndDeletedAtIsNull(project.getId(), userId))
+                .thenReturn(Optional.of(project));
+
+        AppError error = assertErr(projectService.update(project.getId(), userId,
+                new UpdateProjectRequest("Renamed", "New description", "not-a-color", null)));
+
+        assertThat(error.code()).isEqualTo("INVALID_COLOR");
+        // A entidade gerenciada não pode ter sido alterada: com @Transactional,
+        // qualquer setter antes do erro seria persistido via dirty checking no commit.
+        assertThat(project.getName()).isEqualTo("Study");
+        assertThat(project.getDescription()).isEqualTo("A description");
+        assertThat(project.getColor()).isEqualTo("#1A2B3C");
+        verify(projectRepository, never()).save(any(Project.class));
+    }
+
+    @Test
     void shouldSoftDeleteOwnProject() {
         UUID userId = UUID.randomUUID();
         Project project = project(userId, ProjectStatus.ACTIVE);

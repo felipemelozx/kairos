@@ -90,16 +90,21 @@ public class ProjectService {
             if (nameCheck instanceof Result.Err<Void> err) {
                 return Result.err(err.error());
             }
-            project.setName(request.name());
-        }
-        if (request.description() != null) {
-            project.setDescription(request.description());
         }
         if (request.color() != null) {
             Result<Void> colorCheck = validateColor(request.color());
             if (colorCheck instanceof Result.Err<Void> err) {
                 return Result.err(err.error());
             }
+        }
+
+        if (request.name() != null) {
+            project.setName(request.name());
+        }
+        if (request.description() != null) {
+            project.setDescription(request.description());
+        }
+        if (request.color() != null) {
             project.setColor(request.color());
         }
         if (request.status() != null) {
