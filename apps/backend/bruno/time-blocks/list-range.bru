@@ -1,0 +1,29 @@
+meta {
+  name: List Time Blocks By Range
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/time-blocks?from=2026-09-24T00:00:00Z&to=2026-09-25T00:00:00Z
+  body: none
+  auth: none
+}
+
+params:query {
+  from: 2026-09-24T00:00:00Z
+  to: 2026-09-25T00:00:00Z
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # List Time Blocks By Range
+
+  Lists non-deleted time blocks of the user overlapping [from, to]. Returns 200.
+
+  Requires ACCESS_TOKEN cookie. Both params must be sent together and
+  `to` must be after `from`, otherwise 400 (INVALID_TIME_RANGE).
+}

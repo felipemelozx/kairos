@@ -1,0 +1,24 @@
+meta {
+  name: List Time Blocks
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/time-blocks
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # List Time Blocks
+
+  Lists non-deleted time blocks owned by the authenticated user. Returns 200.
+
+  Requires ACCESS_TOKEN cookie (login/register first).
+  See "List Time Blocks By Range" for the ?from&to filter.
+}

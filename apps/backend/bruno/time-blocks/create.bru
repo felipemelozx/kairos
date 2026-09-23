@@ -1,0 +1,38 @@
+meta {
+  name: Create Time Block
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/time-blocks
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-CSRF-Token: {{csrfToken}}
+}
+
+body:json {
+  {
+    "title": "Deep work",
+    "startDateTime": "2026-09-24T13:00:00Z",
+    "endDateTime": "2026-09-24T14:00:00Z"
+  }
+}
+
+docs {
+  # Create Time Block
+
+  Creates a time block owned by the authenticated user. Returns 201.
+
+  Requires ACCESS_TOKEN cookie (login/register first) + X-CSRF-Token header
+  (paste CSRF_TOKEN cookie value into the `csrfToken` environment variable).
+
+  Optional fields: `projectId` (must belong to the user, else 404),
+  `seriesId` is server-managed — do not send.
+
+  Returns 400 when title is blank/>200 chars or end <= start.
+}

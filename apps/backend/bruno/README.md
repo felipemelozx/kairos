@@ -41,6 +41,24 @@ Para trocar de environment, clique no dropdown no canto superior direito do Brun
   - Retorna perfil do usuário autenticado
   - Requer ACCESS_TOKEN cookie válido
 
+### Time Blocks
+
+> Requer ACCESS_TOKEN cookie (login/register primeiro). Requests de escrita
+> (`POST`/`PATCH`/`DELETE`) exigem também o header `X-CSRF-Token` — copie o valor
+> do cookie `CSRF_TOKEN` (não-httpOnly) para a variável de ambiente `csrfToken`.
+
+- **Create Time Block** - `POST /api/time-blocks` → 201
+  - Body: `title` (1–200), `startDateTime`, `endDateTime` (ISO-8601), `projectId` opcional
+  - 400 se título/range inválido, 404 se `projectId` não pertence ao usuário
+- **List Time Blocks** - `GET /api/time-blocks` → 200
+- **List By Range** - `GET /api/time-blocks?from=...&to=...` → 200
+  - Ambos juntos, `to` após `from`, senão 400
+- **Get Time Block** - `GET /api/time-blocks/:blockId` → 200/404
+- **Update Time Block** - `PATCH /api/time-blocks/:blockId` → 200 (partial update)
+- **Delete Time Block** - `DELETE /api/time-blocks/:blockId` → 200 (soft delete)
+
+IDs de outro usuário retornam 404 (owner scoping, nunca 403).
+
 ## Como Usar
 
 ### 1. Registrar usuário

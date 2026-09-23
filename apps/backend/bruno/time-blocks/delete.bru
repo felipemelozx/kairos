@@ -1,0 +1,31 @@
+meta {
+  name: Delete Time Block
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/time-blocks/:blockId
+  body: none
+  auth: none
+}
+
+params:path {
+  blockId: PASTE_BLOCK_ID_HERE
+}
+
+headers {
+  Content-Type: application/json
+  X-CSRF-Token: {{csrfToken}}
+}
+
+docs {
+  # Delete Time Block
+
+  Soft delete — the block leaves the list but history is preserved. Returns 200.
+
+  Requires ACCESS_TOKEN cookie + X-CSRF-Token header
+  (paste CSRF_TOKEN cookie value into the `csrfToken` environment variable).
+
+  Returns 404 when the block does not belong to the user.
+}

@@ -12,7 +12,9 @@ public enum ErrorCode {
     UNAUTHORIZED("UNAUTHORIZED", "Not authenticated"),
     NOT_FOUND("NOT_FOUND", "Resource not found"),
     INVALID_PROJECT_NAME("INVALID_PROJECT_NAME", "Project name must be between 1 and 100 characters"),
-    INVALID_COLOR("INVALID_COLOR", "Color must be a valid hex color (#RRGGBB)");
+    INVALID_COLOR("INVALID_COLOR", "Color must be a valid hex color (#RRGGBB)"),
+    INVALID_TIME_BLOCK_TITLE("INVALID_TIME_BLOCK_TITLE", "Time block title must be between 1 and 200 characters"),
+    INVALID_TIME_RANGE("INVALID_TIME_RANGE", "End datetime must be after start datetime");
 
     private final String code;
     private final String defaultMessage;
