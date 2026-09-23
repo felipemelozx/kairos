@@ -32,7 +32,7 @@ docs {
   (paste CSRF_TOKEN cookie value into the `csrfToken` environment variable).
 
   Optional fields: `projectId` (must belong to the user, else 404),
-  `seriesId` is server-managed — do not send.
+  `seriesId` (nullable UUID; not validated until SERIES-001). Not patchable.
 
   Returns 400 when title is blank/>200 chars or end <= start.
 }

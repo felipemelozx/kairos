@@ -6,7 +6,7 @@
 **Priority:** 🔴 Critical (blocks Calendar §9.1, ChecklistItem CHK-001, WorkSession SESSION-001, Review metrics)
 **Points:** 5
 **Effort:** 6-8 hours
-**Status:** ✅ Done (2026-09-23) — full `./mvnw test` green: 122 tests, 0 failures; JaCoCo LINE 91.0% global, TimeBlock classes 72–100%.
+**Status:** ✅ Done (2026-09-23) — full `./mvnw test` green: 126 tests, 0 failures; JaCoCo LINE 91.5% global, TimeBlock classes 78–100%.
 **Type:** 💻 Feature (backend only)
 
 ---
@@ -148,14 +148,16 @@ Scope is **backend only** (CLI First). Calendar UI, series materialization (SERI
 
 - [x] **2.1** Migration `V4__Create_time_blocks.sql` — columns from PRD §15.2; index from §15.4; CHECK from §15.3.1. `series_id UUID NULL` (no FK until SERIES-001); `project_id UUID NULL REFERENCES projects(id)`:
   ```sql
-  CREATE TABLE time_blocks (...);
-  ALTER TABLE time_blocks ADD CONSTRAINT chk_time_blocks_range CHECK (end_datetime > start_datetime);
+  CREATE TABLE time_blocks (
+    ...,
+    CONSTRAINT chk_time_blocks_range CHECK (end_datetime > start_datetime)
+  );
   CREATE INDEX idx_timeblocks_user_range ON time_blocks(user_id, start_datetime, end_datetime)
   WHERE deleted_at IS NULL;
   ```
 - [x] **2.2** `entity/TimeBlock.java` — JPA entity, explicit getters/setters, no Lombok, no business logic
 - [x] **2.3** `repository/TimeBlockRepository.java` — owner-scoped only (+ range query, ordered)
-- [x] Run tests → repository tests pass (compilation green; execution pending Docker — see Dev Notes)
+- [x] Run tests → repository tests pass (verified in Docker full run, 2026-09-23)
 
 ### Phase 3: Green — DTOs + Service
 
@@ -177,12 +179,12 @@ Scope is **backend only** (CLI First). Calendar UI, series materialization (SERI
   - `GET /api/time-blocks/{blockId}` → 200
   - `PATCH /api/time-blocks/{blockId}` → 200 (partial; D5)
   - `DELETE /api/time-blocks/{blockId}` → 200 (soft delete)
-- [x] Run tests → all green (unit scope; ITs pending Docker — see Dev Notes)
+- [x] Run tests → all green (full suite with Docker, 2026-09-23 — see Dev Notes)
 
 ### Phase 5: Quality
 
-- [x] **5.1** Unit scope: 72/72 green (`AuthServiceTest`, `CsrfTokenServiceTest`, `CsrfValidationFilterTest`, `JwtServiceTest`, `OAuth2AuthenticationSuccessHandlerTest`, `OriginValidationFilterTest`, `ProjectServiceTest`, `TimeBlockServiceTest` 11/11). Full `./mvnw test` NOT green here — 7 Testcontainers suites error with "Could not find a valid Docker environment" (incl. all pre-existing IT suites; environmental, not a regression). **Must re-run full suite with Docker before Done.**
-- [ ] **5.2** `./mvnw jacoco:report` — unit-only run: new TB-001 code 63.79% (controller 0% — only exercised by ITs); global 85.30% unit-only. Gate ≥80% new code verifiable only with Docker run (PROJ-001 reached 98.23% with full suite; same test shape here).
+- [x] **5.1** Full `./mvnw test` with Docker GREEN (2026-09-23): 126 tests, 0 failures, BUILD SUCCESS (was: unit-only 72/72 while Docker was unavailable).
+- [x] **5.2** `./mvnw jacoco:report` — LINE 91.5% global; TimeBlock classes 78–100% (controller 78.9%, service 89.1%, entity 93.8%, DTOs 100%).
 - [x] **5.3** OpenAPI annotations complete for all endpoints (`TimeBlockApi`: 5 operations with @ApiResponses)
 - [x] **5.4** Story DoD checklist + File List updated (this edit)
 
@@ -358,6 +360,7 @@ apps/backend/src/test/java/com/felipemelozx/kairos/
 | 2026-09-23 | 1.1.0 | Implementation complete (TDD Red→Green): V4, entity/repo/DTOs/service/API/controller, 3 test classes (26 tests); unit 72/72 green; ITs pending Docker; status → In Progress | @aios-master (Orion, executing as @dev — subagent depth limit) |
 | 2026-09-23 | 1.2.0 | Bruno collection updated: `bruno/time-blocks/` (6 requests) + `README.md` Time Blocks section + `csrfToken` env var (standing rule: endpoints sempre acompanham Bruno); AGENTS.md rule 5 registrada | Dex (@dev) |
 | 2026-09-23 | 1.3.0 | Full `./mvnw test` with Docker GREEN (122 tests, 0 failures, BUILD SUCCESS); JaCoCo LINE 91.0% global (TimeBlock 72–100%); DoD all checked; status → Done | Quartz (@qa) |
+| 2026-09-23 | 1.4.0 | CodeRabbit PR #10 review addressed (4/4): seriesId + range docs fixed, range validation moved controller→service (Result), story Phase 2.1/5 entries aligned; +4 service tests (126 total green); controller coverage 72.1→78.9% (Sonar new-code gate); logout.bru + CSRF header (Bruno 403 fix) | Dex (@dev) |
 
 ---
 

@@ -63,18 +63,10 @@ public class TimeBlockController implements TimeBlockApi {
         if (userId instanceof Result.Err<UUID> err) {
             return HttpErrorMapper.toResponse(err.error());
         }
-        if ((from == null) != (to == null)) {
-            return HttpErrorMapper.toResponse(
-                    com.felipemelozx.kairos.common.AppError.of(ErrorCode.INVALID_TIME_RANGE,
-                            "Both from and to must be provided together"));
-        }
-        if (from != null && !to.isAfter(from)) {
-            return HttpErrorMapper.toResponse(
-                    com.felipemelozx.kairos.common.AppError.of(ErrorCode.INVALID_TIME_RANGE,
-                            "End datetime must be after start datetime"));
-        }
         UUID id = ((Result.Ok<UUID>) userId).value();
-        return ResponseEntity.ok(ApiResponse.success(timeBlockService.listByUser(id, from, to)));
+        return timeBlockService.listByUser(id, from, to).fold(
+                blocks -> ResponseEntity.ok(ApiResponse.success(blocks)),
+                HttpErrorMapper::toResponse);
     }
 
     @Override

@@ -65,8 +65,17 @@ public class TimeBlockService {
     }
 
     @Transactional(readOnly = true)
-    public List<TimeBlockResponse> listByUser(UUID userId, Instant from, Instant to) {
+    public Result<List<TimeBlockResponse>> listByUser(UUID userId, Instant from, Instant to) {
         log.info("Listing time blocks for userId={}", userId);
+        if ((from == null) != (to == null)) {
+            return Result.err(ErrorCode.INVALID_TIME_RANGE, "Both from and to must be provided together");
+        }
+        if (from != null) {
+            Result<Void> rangeCheck = validateRange(from, to);
+            if (rangeCheck instanceof Result.Err<Void> err) {
+                return Result.err(err.error());
+            }
+        }
         List<TimeBlock> blocks;
         if (from != null && to != null) {
             blocks = timeBlockRepository
@@ -77,7 +86,7 @@ public class TimeBlockService {
         }
         List<TimeBlockResponse> result = blocks.stream().map(TimeBlockResponse::from).toList();
         log.info("Listed {} time blocks for userId={}", result.size(), userId);
-        return result;
+        return Result.ok(result);
     }
 
     @Transactional(readOnly = true)

@@ -22,7 +22,7 @@ headers {
 docs {
   # List Time Blocks By Range
 
-  Lists non-deleted time blocks of the user overlapping [from, to]. Returns 200.
+  Lists non-deleted time blocks of the user whose startDateTime is in [from, to). Returns 200.
 
   Requires ACCESS_TOKEN cookie. Both params must be sent together and
   `to` must be after `from`, otherwise 400 (INVALID_TIME_RANGE).

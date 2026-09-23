@@ -160,11 +160,68 @@ class TimeBlockServiceTest {
         when(timeBlockRepository.findByUserIdAndDeletedAtIsNullOrderByStartDateTimeAsc(userId))
                 .thenReturn(List.of(block));
 
-        List<TimeBlockResponse> result = timeBlockService.listByUser(userId, null, null);
+        List<TimeBlockResponse> result = assertOk(timeBlockService.listByUser(userId, null, null));
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).title()).isEqualTo("Deep Work");
         verify(timeBlockRepository).findByUserIdAndDeletedAtIsNullOrderByStartDateTimeAsc(userId);
+    }
+
+    @Test
+    void shouldListBlocksInRange() {
+        UUID userId = UUID.randomUUID();
+        TimeBlock block = storedBlock(userId, "Deep Work");
+        Instant from = Instant.parse("2026-10-01T00:00:00Z");
+        Instant to = Instant.parse("2026-10-02T00:00:00Z");
+        when(timeBlockRepository
+                .findByUserIdAndStartDateTimeGreaterThanEqualAndStartDateTimeLessThanAndDeletedAtIsNullOrderByStartDateTimeAsc(
+                        userId, from, to))
+                .thenReturn(List.of(block));
+
+        List<TimeBlockResponse> result = assertOk(timeBlockService.listByUser(userId, from, to));
+
+        assertThat(result).hasSize(1);
+        verify(timeBlockRepository)
+                .findByUserIdAndStartDateTimeGreaterThanEqualAndStartDateTimeLessThanAndDeletedAtIsNullOrderByStartDateTimeAsc(
+                        userId, from, to);
+    }
+
+    @Test
+    void shouldRejectListWhenOnlyFromProvided() {
+        UUID userId = UUID.randomUUID();
+
+        AppError error = assertErr(timeBlockService.listByUser(
+                userId, Instant.parse("2026-10-01T00:00:00Z"), null));
+
+        assertThat(error.code()).isEqualTo("INVALID_TIME_RANGE");
+        verify(timeBlockRepository, never())
+                .findByUserIdAndDeletedAtIsNullOrderByStartDateTimeAsc(any(UUID.class));
+    }
+
+    @Test
+    void shouldRejectListWhenOnlyToProvided() {
+        UUID userId = UUID.randomUUID();
+
+        AppError error = assertErr(timeBlockService.listByUser(
+                userId, null, Instant.parse("2026-10-02T00:00:00Z")));
+
+        assertThat(error.code()).isEqualTo("INVALID_TIME_RANGE");
+        verify(timeBlockRepository, never())
+                .findByUserIdAndDeletedAtIsNullOrderByStartDateTimeAsc(any(UUID.class));
+    }
+
+    @Test
+    void shouldRejectListWhenRangeInverted() {
+        UUID userId = UUID.randomUUID();
+
+        AppError error = assertErr(timeBlockService.listByUser(
+                userId,
+                Instant.parse("2026-10-02T00:00:00Z"),
+                Instant.parse("2026-10-01T00:00:00Z")));
+
+        assertThat(error.code()).isEqualTo("INVALID_TIME_RANGE");
+        verify(timeBlockRepository, never())
+                .findByUserIdAndDeletedAtIsNullOrderByStartDateTimeAsc(any(UUID.class));
     }
 
     @Test

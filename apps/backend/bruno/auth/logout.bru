@@ -12,12 +12,16 @@ post {
 
 headers {
   Content-Type: application/json
+  X-CSRF-Token: {{csrfToken}}
 }
 
 docs {
   # Logout
-  
+
   Clears authentication cookies (ACCESS_TOKEN and REFRESH_TOKEN).
-  
-  Requires valid authentication cookies from login/register.
+
+  Requires valid authentication cookies from login/register PLUS the
+  X-CSRF-Token header (logout is NOT in the CSRF skip list — paste the
+  CSRF_TOKEN cookie value into the `csrfToken` environment variable).
+  Without it the API returns 403 "Missing CSRF token".
 }
