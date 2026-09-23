@@ -1,11 +1,11 @@
 package com.felipemelozx.kairos.controller;
 
 import com.felipemelozx.kairos.api.AuthApi;
+import com.felipemelozx.kairos.common.Result;
 import com.felipemelozx.kairos.dto.request.LoginRequest;
 import com.felipemelozx.kairos.dto.request.RegisterRequest;
 import com.felipemelozx.kairos.dto.response.ApiResponse;
 import com.felipemelozx.kairos.dto.response.UserResponse;
-import com.felipemelozx.kairos.entity.User;
 import com.felipemelozx.kairos.security.AuthCookieService;
 import com.felipemelozx.kairos.security.jwt.JwtService;
 import com.felipemelozx.kairos.service.AuthService;
@@ -39,11 +39,12 @@ public class AuthController implements AuthApi {
     public ResponseEntity<ApiResponse<UserResponse>> register(
             @Valid @RequestBody RegisterRequest request,
             HttpServletResponse response) {
-        UserResponse user = authService.register(request);
-
-        authCookieService.issueAuthCookies(response, user.id(), 0);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(user));
+        return authService.register(request).fold(
+                user -> {
+                    authCookieService.issueAuthCookies(response, user.id(), 0);
+                    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(user));
+                },
+                HttpErrorMapper::toResponse);
     }
 
     @Override
@@ -51,11 +52,12 @@ public class AuthController implements AuthApi {
     public ResponseEntity<ApiResponse<UserResponse>> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
-        UserResponse user = authService.login(request);
-
-        authCookieService.issueAuthCookies(response, user.id());
-
-        return ResponseEntity.ok(ApiResponse.success(user));
+        return authService.login(request).fold(
+                user -> {
+                    authCookieService.issueAuthCookies(response, user.id());
+                    return ResponseEntity.ok(ApiResponse.success(user));
+                },
+                HttpErrorMapper::toResponse);
     }
 
     @Override
@@ -77,18 +79,21 @@ public class AuthController implements AuthApi {
     public ResponseEntity<ApiResponse<Void>> refresh(
             @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
             HttpServletResponse response) {
-        AuthService.RotatedSession session = authService.rotateRefreshToken(refreshToken);
-        authCookieService.issueAuthCookies(response, session.userId(), session.tokenVersion());
-
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return authService.rotateRefreshToken(refreshToken).fold(
+                session -> {
+                    authCookieService.issueAuthCookies(response, session.userId(), session.tokenVersion());
+                    return ResponseEntity.ok(ApiResponse.success(null));
+                },
+                HttpErrorMapper::toResponse);
     }
 
     @Override
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> me(@AuthenticationPrincipal UserDetails principal) {
         UUID userId = UUID.fromString(principal.getUsername());
-        User user = authService.findUserById(userId);
-        return ResponseEntity.ok(ApiResponse.success(UserResponse.from(user)));
+        return authService.findUserById(userId).fold(
+                user -> ResponseEntity.ok(ApiResponse.success(UserResponse.from(user))),
+                HttpErrorMapper::toResponse);
     }
 
     private UUID resolveUserId(UserDetails principal, String refreshToken) {

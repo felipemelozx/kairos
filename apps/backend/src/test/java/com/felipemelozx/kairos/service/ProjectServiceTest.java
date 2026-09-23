@@ -1,11 +1,12 @@
 package com.felipemelozx.kairos.service;
 
+import com.felipemelozx.kairos.common.AppError;
+import com.felipemelozx.kairos.common.Result;
 import com.felipemelozx.kairos.dto.request.CreateProjectRequest;
 import com.felipemelozx.kairos.dto.request.UpdateProjectRequest;
 import com.felipemelozx.kairos.dto.response.ProjectResponse;
 import com.felipemelozx.kairos.entity.Project;
 import com.felipemelozx.kairos.entity.enums.ProjectStatus;
-import com.felipemelozx.kairos.exception.BusinessException;
 import com.felipemelozx.kairos.repository.ProjectRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +20,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -45,7 +45,7 @@ class ProjectServiceTest {
             return project;
         });
 
-        ProjectResponse result = projectService.create(userId, request);
+        ProjectResponse result = assertOk(projectService.create(userId, request));
 
         assertThat(result.name()).isEqualTo("Study English");
         assertThat(result.description()).isEqualTo("Grammar");
@@ -60,8 +60,9 @@ class ProjectServiceTest {
         UUID userId = UUID.randomUUID();
         CreateProjectRequest request = new CreateProjectRequest("   ", null, "#1A2B3C");
 
-        assertThatThrownBy(() -> projectService.create(userId, request))
-                .isInstanceOf(BusinessException.class);
+        AppError error = assertErr(projectService.create(userId, request));
+
+        assertThat(error.code()).isEqualTo("INVALID_PROJECT_NAME");
         verify(projectRepository, never()).save(any(Project.class));
     }
 
@@ -70,8 +71,9 @@ class ProjectServiceTest {
         UUID userId = UUID.randomUUID();
         CreateProjectRequest request = new CreateProjectRequest("Study", null, null);
 
-        assertThatThrownBy(() -> projectService.create(userId, request))
-                .isInstanceOf(BusinessException.class);
+        AppError error = assertErr(projectService.create(userId, request));
+
+        assertThat(error.code()).isEqualTo("INVALID_COLOR");
         verify(projectRepository, never()).save(any(Project.class));
     }
 
@@ -80,8 +82,9 @@ class ProjectServiceTest {
         UUID userId = UUID.randomUUID();
         CreateProjectRequest request = new CreateProjectRequest("Study", null, "red");
 
-        assertThatThrownBy(() -> projectService.create(userId, request))
-                .isInstanceOf(BusinessException.class);
+        AppError error = assertErr(projectService.create(userId, request));
+
+        assertThat(error.code()).isEqualTo("INVALID_COLOR");
         verify(projectRepository, never()).save(any(Project.class));
     }
 
@@ -95,7 +98,7 @@ class ProjectServiceTest {
             return project;
         });
 
-        ProjectResponse result = projectService.create(userId, request);
+        ProjectResponse result = assertOk(projectService.create(userId, request));
 
         assertThat(result.name()).isEqualTo("inbox");
         verify(projectRepository).save(any(Project.class));
@@ -122,7 +125,7 @@ class ProjectServiceTest {
         when(projectRepository.findByIdAndUserIdAndDeletedAtIsNull(project.getId(), userId))
                 .thenReturn(Optional.of(project));
 
-        ProjectResponse result = projectService.getById(project.getId(), userId);
+        ProjectResponse result = assertOk(projectService.getById(project.getId(), userId));
 
         assertThat(result.id()).isEqualTo(project.getId());
     }
@@ -133,9 +136,9 @@ class ProjectServiceTest {
         UUID userId = UUID.randomUUID();
         when(projectRepository.findByIdAndUserIdAndDeletedAtIsNull(projectId, userId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectService.getById(projectId, userId))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("NOT_FOUND"));
+        AppError error = assertErr(projectService.getById(projectId, userId));
+
+        assertThat(error.code()).isEqualTo("NOT_FOUND");
     }
 
     @Test
@@ -146,8 +149,8 @@ class ProjectServiceTest {
                 .thenReturn(Optional.of(project));
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ProjectResponse result = projectService.update(project.getId(), userId,
-                new UpdateProjectRequest("Renamed", null, null, null));
+        ProjectResponse result = assertOk(projectService.update(project.getId(), userId,
+                new UpdateProjectRequest("Renamed", null, null, null)));
 
         assertThat(result.name()).isEqualTo("Renamed");
         assertThat(result.description()).isEqualTo("A description");
@@ -163,10 +166,29 @@ class ProjectServiceTest {
                 .thenReturn(Optional.of(project));
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ProjectResponse result = projectService.update(project.getId(), userId,
-                new UpdateProjectRequest(null, null, null, ProjectStatus.ARCHIVED));
+        ProjectResponse result = assertOk(projectService.update(project.getId(), userId,
+                new UpdateProjectRequest(null, null, null, ProjectStatus.ARCHIVED)));
 
         assertThat(result.status()).isEqualTo("ARCHIVED");
+    }
+
+    @Test
+    void shouldNotMutateManagedEntityWhenUpdateValidationFails() {
+        UUID userId = UUID.randomUUID();
+        Project project = project(userId, ProjectStatus.ACTIVE);
+        when(projectRepository.findByIdAndUserIdAndDeletedAtIsNull(project.getId(), userId))
+                .thenReturn(Optional.of(project));
+
+        AppError error = assertErr(projectService.update(project.getId(), userId,
+                new UpdateProjectRequest("Renamed", "New description", "not-a-color", null)));
+
+        assertThat(error.code()).isEqualTo("INVALID_COLOR");
+        // A entidade gerenciada não pode ter sido alterada: com @Transactional,
+        // qualquer setter antes do erro seria persistido via dirty checking no commit.
+        assertThat(project.getName()).isEqualTo("Study");
+        assertThat(project.getDescription()).isEqualTo("A description");
+        assertThat(project.getColor()).isEqualTo("#1A2B3C");
+        verify(projectRepository, never()).save(any(Project.class));
     }
 
     @Test
@@ -176,7 +198,7 @@ class ProjectServiceTest {
         when(projectRepository.findByIdAndUserIdAndDeletedAtIsNull(project.getId(), userId))
                 .thenReturn(Optional.of(project));
 
-        projectService.softDelete(project.getId(), userId);
+        assertOk(projectService.softDelete(project.getId(), userId));
 
         verify(projectRepository).softDeleteByIdAndUserId(eq(project.getId()), eq(userId), any(Instant.class));
     }
@@ -187,10 +209,20 @@ class ProjectServiceTest {
         UUID userId = UUID.randomUUID();
         when(projectRepository.findByIdAndUserIdAndDeletedAtIsNull(projectId, userId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> projectService.softDelete(projectId, userId))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("NOT_FOUND"));
+        AppError error = assertErr(projectService.softDelete(projectId, userId));
+
+        assertThat(error.code()).isEqualTo("NOT_FOUND");
         verify(projectRepository, never()).softDeleteByIdAndUserId(any(UUID.class), any(UUID.class), any(Instant.class));
+    }
+
+    private <T> T assertOk(Result<T> result) {
+        assertThat(result).isInstanceOf(Result.Ok.class);
+        return ((Result.Ok<T>) result).value();
+    }
+
+    private <T> AppError assertErr(Result<T> result) {
+        assertThat(result).isInstanceOf(Result.Err.class);
+        return ((Result.Err<T>) result).error();
     }
 
     private Project project(UUID userId, ProjectStatus status) {
