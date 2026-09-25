@@ -32,8 +32,13 @@ docs {
   (`title`, `startDateTime`, `endDateTime`, `projectId`). Returns 200.
 
   Requires ACCESS_TOKEN cookie + X-CSRF-Token header
-  (paste CSRF_TOKEN cookie value into the `csrfToken` environment variable).
+  (the `csrfToken` env var is auto-filled by the login/register/refresh
+  post-response script — never paste it manually).
 
   Returns 400 on invalid title/range, 404 when the block (or projectId)
   does not belong to the user.
+
+  NOTE: the backend log line "Request without Origin and Referer headers"
+  is a harmless WARN (fail-open for non-browser clients like Bruno) — it does
+  NOT block the request.
 }

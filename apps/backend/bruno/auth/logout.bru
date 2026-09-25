@@ -21,7 +21,7 @@ docs {
   Clears authentication cookies (ACCESS_TOKEN and REFRESH_TOKEN).
 
   Requires valid authentication cookies from login/register PLUS the
-  X-CSRF-Token header (logout is NOT in the CSRF skip list — paste the
-  CSRF_TOKEN cookie value into the `csrfToken` environment variable).
+  X-CSRF-Token header (logout is NOT in the CSRF skip list — the `csrfToken`
+  env var is auto-filled by the login/register/refresh post-response script).
   Without it the API returns 403 "Missing CSRF token".
 }

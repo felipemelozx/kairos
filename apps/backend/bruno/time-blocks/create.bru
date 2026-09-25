@@ -29,10 +29,16 @@ docs {
   Creates a time block owned by the authenticated user. Returns 201.
 
   Requires ACCESS_TOKEN cookie (login/register first) + X-CSRF-Token header
-  (paste CSRF_TOKEN cookie value into the `csrfToken` environment variable).
+  (the `csrfToken` env var is auto-filled by the login/register/refresh
+  post-response script — never paste it manually).
 
   Optional fields: `projectId` (must belong to the user, else 404),
   `seriesId` (nullable UUID; not validated until SERIES-001). Not patchable.
 
   Returns 400 when title is blank/>200 chars or end <= start.
+
+  NOTE: the backend log line "Request without Origin and Referer headers"
+  is a harmless WARN (fail-open for non-browser clients like Bruno) — it does
+  NOT block the request. Real failures come with HTTP status: 401 = login
+  first, 403 = missing/wrong X-CSRF-Token.
 }
