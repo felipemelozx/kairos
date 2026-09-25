@@ -20,3 +20,18 @@ body:json {
     "password": "password123"
   }
 }
+
+script:post-response {
+  // Auto-captura o cookie CSRF_TOKEN (rotacionado a cada login) para a var
+  // de ambiente `csrfToken`, usada pelo header X-CSRF-Token nas escritas.
+  // Nao cole o valor manualmente — ele invalida a cada nova autenticacao.
+  const headers = res.getHeaders() || {};
+  const setCookie = headers['set-cookie'] || headers['Set-Cookie'] || '';
+  const raw = Array.isArray(setCookie) ? setCookie.join('\n') : String(setCookie);
+  const match = /CSRF_TOKEN=([^;\s]+)/.exec(raw);
+  if (match && match[1]) {
+    bru.setEnvVar('csrfToken', match[1], { persist: true });
+  } else {
+    console.log('csrf auto-capture: cookie CSRF_TOKEN nao encontrado no Set-Cookie da resposta');
+  }
+}

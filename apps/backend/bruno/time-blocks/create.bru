@@ -1,0 +1,44 @@
+meta {
+  name: Create Time Block
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/time-blocks
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-CSRF-Token: {{csrfToken}}
+}
+
+body:json {
+  {
+    "title": "Deep work",
+    "startDateTime": "2026-09-24T13:00:00Z",
+    "endDateTime": "2026-09-24T14:00:00Z"
+  }
+}
+
+docs {
+  # Create Time Block
+
+  Creates a time block owned by the authenticated user. Returns 201.
+
+  Requires ACCESS_TOKEN cookie (login/register first) + X-CSRF-Token header
+  (the `csrfToken` env var is auto-filled by the login/register/refresh
+  post-response script — never paste it manually).
+
+  Optional fields: `projectId` (must belong to the user, else 404),
+  `seriesId` (nullable UUID; not validated until SERIES-001). Not patchable.
+
+  Returns 400 when title is blank/>200 chars or end <= start.
+
+  NOTE: the backend log line "Request without Origin and Referer headers"
+  is a harmless WARN (fail-open for non-browser clients like Bruno) — it does
+  NOT block the request. Real failures come with HTTP status: 401 = login
+  first, 403 = missing/wrong X-CSRF-Token.
+}

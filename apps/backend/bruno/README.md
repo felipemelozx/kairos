@@ -41,6 +41,26 @@ Para trocar de environment, clique no dropdown no canto superior direito do Brun
   - Retorna perfil do usuário autenticado
   - Requer ACCESS_TOKEN cookie válido
 
+### Time Blocks
+
+> Requer ACCESS_TOKEN cookie (login/register primeiro). Requests de escrita
+> (`POST`/`PATCH`/`DELETE`) exigem também o header `X-CSRF-Token` — a variável
+> de ambiente `csrfToken` é preenchida automaticamente pelo script de
+> pós-resposta do login/register/refresh. Nunca cole o valor manualmente:
+> o token CSRF é rotacionado a cada autenticação e a colagem invalida.
+
+- **Create Time Block** - `POST /api/time-blocks` → 201
+  - Body: `title` (1–200), `startDateTime`, `endDateTime` (ISO-8601), `projectId` opcional
+  - 400 se título/range inválido, 404 se `projectId` não pertence ao usuário
+- **List Time Blocks** - `GET /api/time-blocks` → 200
+- **List By Range** - `GET /api/time-blocks?from=...&to=...` → 200
+  - Ambos juntos, `to` após `from`, senão 400
+- **Get Time Block** - `GET /api/time-blocks/:blockId` → 200/404
+- **Update Time Block** - `PATCH /api/time-blocks/:blockId` → 200 (partial update)
+- **Delete Time Block** - `DELETE /api/time-blocks/:blockId` → 200 (soft delete)
+
+IDs de outro usuário retornam 404 (owner scoping, nunca 403).
+
 ## Como Usar
 
 ### 1. Registrar usuário
@@ -59,7 +79,7 @@ Após registrar, use o mesmo email/password para login.
 
 ### 3. Testar endpoints autenticados
 
-O Bruno gerencia cookies automaticamente. Após login/register, os cookies httpOnly são enviados automaticamente nas próximas requests.
+O Bruno gerencia cookies automaticamente. Após login/register, os cookies httpOnly são enviados automaticamente nas próximas requests, e o script de pós-resposta captura o cookie `CSRF_TOKEN` para a var `csrfToken` (usada pelo header `X-CSRF-Token`).
 
 ### 4. Verificar autenticação
 
@@ -82,6 +102,11 @@ A API usa cookies httpOnly para segurança (não localStorage). O Bruno suporta 
 - Inicie o backend: `cd apps/backend && ./mvnw spring-boot:run`
 - Aguarde até ver "Started KairosApplication"
 - Verifique se a porta 8080 está livre
+
+### WARN "Request without Origin and Referer headers" no log
+
+- É só um aviso: sem `Origin`/`Referer` (caso do Bruno) o filtro libera a request (fail-open). **Não bloqueia.**
+- O erro real está no status HTTP da resposta: `401` = faça login primeiro; `403` = `X-CSRF-Token` ausente/errado (rode login/register/refresh de novo para o script recapturar o `csrfToken` — nunca cole manualmente); `403 "Invalid origin"` = você enviou um header `Origin` fora da allowlist — remova o header ou use `http://localhost:3000`.
 
 ## Documentação Completa
 
