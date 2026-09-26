@@ -26,7 +26,7 @@ jobs:
 
       - name: Build backend JAR
         working-directory: apps/backend
-        run: ./mvnw package -DskipTests
+        run: ./mvnw -B package
 
       - name: Configure SSH
         run: |
@@ -58,8 +58,8 @@ jobs:
             docker-compose down
             docker-compose up -d --build
 
-            # Wait for health check
-            timeout 60s bash -c 'until docker exec kairos-backend wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health; do sleep 2; done'
+            # Wait for health check (context-path /api)
+            timeout 60s bash -c 'until docker exec kairos-backend wget --no-verbose --tries=1 --spider http://localhost:8080/api/actuator/health; do sleep 2; done'
 
             echo "Backend deployed successfully!"
           ENDSSH
@@ -67,7 +67,7 @@ jobs:
       - name: Health check
         run: |
           sleep 10
-          curl -f http://${{ secrets.VPS_HOST }}:8080/actuator/health || exit 1
+          curl -f http://${{ secrets.VPS_HOST }}:8080/api/actuator/health || exit 1
 
       - name: Notify deployment success
         if: success()

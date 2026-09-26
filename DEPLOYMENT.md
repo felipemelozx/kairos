@@ -102,6 +102,22 @@ systemctl restart nginx
    - Add: `VPS_USER` (root or sudo user)
    - Add: `VPS_SSH_PRIVATE_KEY` (contents of ~/.ssh/kairos_deploy)
 
+9. **Configure application secrets on the VPS (FIX-001, required):**
+   The backend runs with `SPRING_PROFILES_ACTIVE=prod` and fails fast without these.
+   Create `/opt/kairos/.env` (or export in the deploy environment):
+   ```bash
+   POSTGRES_PASSWORD=<strong-random-password>
+   JWT_SECRET=<at-least-32-chars-random>
+   CSRF_SECRET=<at-least-32-chars-random>
+   FRONTEND_URL=https://yourdomain.com
+   ALLOWED_ORIGINS=https://yourdomain.com
+   # optional OAuth
+   GOOGLE_CLIENT_ID=<id>
+   GOOGLE_CLIENT_SECRET=<secret>
+   ```
+   Never use the repository placeholder defaults in production. `docker-compose.yml`
+   requires `POSTGRES_PASSWORD`, `JWT_SECRET` and `CSRF_SECRET` to be set.
+
 ### Step 3: DNS Configuration (5 minutes)
 
 Point your domains to the correct servers:
@@ -134,7 +150,7 @@ Value: your-vps-ip-address
 ./infrastructure/vps/deploy-backend.sh
 
 # Check health
-curl http://api.yourdomain.com/actuator/health
+curl http://api.yourdomain.com/api/actuator/health
 ```
 
 ### 2. Test Frontend Deployment
@@ -190,7 +206,7 @@ vercel --prod
 
 **Backend:**
 ```bash
-curl http://api.yourdomain.com/actuator/health
+curl http://api.yourdomain.com/api/actuator/health
 ```
 
 **Frontend:**

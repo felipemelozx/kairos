@@ -1,0 +1,8 @@
+# Local-only port publishing. Production uses base docker-compose.yml (no published db/redis ports).
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+  redis:
+    ports:
+      - "6379:6379"
