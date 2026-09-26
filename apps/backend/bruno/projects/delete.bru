@@ -1,0 +1,36 @@
+meta {
+  name: Delete Project
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/projects/:projectId
+  body: none
+  auth: none
+}
+
+params:path {
+  projectId: PASTE_PROJECT_ID_HERE
+}
+
+headers {
+  Content-Type: application/json
+  X-CSRF-Token: {{csrfToken}}
+}
+
+docs {
+  # Delete Project
+
+  Soft delete — the project leaves the list but the row is preserved. Returns 200.
+
+  Requires ACCESS_TOKEN cookie + X-CSRF-Token header
+  (the `csrfToken` env var is auto-filled by the login/register/refresh
+  post-response script — never paste it manually).
+
+  Returns 404 when the project does not belong to the user.
+
+  NOTE: the backend log line "Request without Origin and Referer headers"
+  is a harmless WARN (fail-open for non-browser clients like Bruno) — it does
+  NOT block the request.
+}

@@ -20,8 +20,16 @@ public interface TimeBlockRepository extends JpaRepository<TimeBlock, UUID> {
 
     Optional<TimeBlock> findByIdAndUserIdAndDeletedAtIsNull(UUID id, UUID userId);
 
+    List<TimeBlock> findBySeriesIdAndUserIdAndDeletedAtIsNullOrderByStartDateTimeAsc(UUID seriesId, UUID userId);
+
     @Modifying
     @Query("UPDATE TimeBlock t SET t.deletedAt = :deletedAt " +
            "WHERE t.id = :id AND t.userId = :userId AND t.deletedAt IS NULL")
     void softDeleteByIdAndUserId(@Param("id") UUID id, @Param("userId") UUID userId, @Param("deletedAt") Instant deletedAt);
+
+    @Modifying
+    @Query("UPDATE TimeBlock t SET t.deletedAt = :deletedAt " +
+           "WHERE t.seriesId = :seriesId AND t.userId = :userId AND t.deletedAt IS NULL AND t.startDateTime >= :from")
+    void softDeleteFutureBySeriesId(@Param("seriesId") UUID seriesId, @Param("userId") UUID userId,
+            @Param("from") Instant from, @Param("deletedAt") Instant deletedAt);
 }

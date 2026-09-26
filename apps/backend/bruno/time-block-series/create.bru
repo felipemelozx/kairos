@@ -1,0 +1,55 @@
+meta {
+  name: Create Series
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/time-block-series
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-CSRF-Token: {{csrfToken}}
+}
+
+body:json {
+  {
+    "title": "Inglês toda Seg/Qua",
+    "startDate": "2026-10-01",
+    "endDate": "2026-12-31",
+    "pattern": {
+      "type": "WEEKLY_WEEKDAYS",
+      "weekdays": [1, 3],
+      "time": "09:00",
+      "durationMinutes": 60
+    }
+  }
+}
+
+docs {
+  # Create Series
+
+  Creates a recurring series owned by the authenticated user and materializes
+  its occurrences into time blocks up to min(endDate, today+12 months). Returns 201.
+
+  Requires ACCESS_TOKEN cookie (login/register first) + X-CSRF-Token header
+  (the `csrfToken` env var is auto-filled by the login/register/refresh
+  post-response script — never paste it manually).
+
+  Body: `title` (1–200, required), `projectId` (optional, must belong to the
+  user else 404), `startDate` (required), `endDate` (optional, >= startDate),
+  `pattern` (required): `type` DAILY | DAILY_INTERVAL | WEEKLY_WEEKDAYS | SINGLE,
+  `interval` (>=1, DAILY_INTERVAL only), `weekdays` (non-empty subset of 0-6
+  where 0=Sunday, WEEKLY_WEEKDAYS only), `time` HH:mm, `durationMinutes` 1–1440.
+
+  Returns 400 INVALID_SERIES_PATTERN on bad pattern, 400 INVALID_SERIES_RANGE
+  when endDate < startDate, 404 when `projectId` does not belong to the user.
+
+  NOTE: the backend log line "Request without Origin and Referer headers"
+  is a harmless WARN (fail-open for non-browser clients like Bruno) — it does
+  NOT block the request. Real failures come with HTTP status: 401 = login
+  first, 403 = missing/wrong X-CSRF-Token.
+}

@@ -41,6 +41,46 @@ Para trocar de environment, clique no dropdown no canto superior direito do Brun
   - Retorna perfil do usuário autenticado
   - Requer ACCESS_TOKEN cookie válido
 
+### Projects
+
+> Requer ACCESS_TOKEN cookie (login/register primeiro). Requests de escrita
+> (`POST`/`PATCH`/`DELETE`) exigem também o header `X-CSRF-Token` — a variável
+> de ambiente `csrfToken` é preenchida automaticamente pelo script de
+> pós-resposta do login/register/refresh. Nunca cole o valor manualmente.
+
+- **Create Project** - `POST /api/projects` → 201
+  - Body: `name` (1–100), `description` (max 500, opcional), `color` (#RRGGBB)
+  - 400 se validação falhar
+- **List Projects** - `GET /api/projects` → 200
+- **Get Project** - `GET /api/projects/:projectId` → 200/404
+- **Update Project** - `PATCH /api/projects/:projectId` → 200 (partial update)
+- **Delete Project** - `DELETE /api/projects/:projectId` → 200 (soft delete)
+
+IDs de outro usuário retornam 404 (owner scoping, nunca 403).
+
+### Time Block Series
+
+> Requer ACCESS_TOKEN cookie (login/register primeiro). Requests de escrita
+> (`POST`/`PATCH`/`DELETE`) exigem também o header `X-CSRF-Token` — a variável
+> de ambiente `csrfToken` é preenchida automaticamente pelo script de
+> pós-resposta do login/register/refresh. Nunca cole o valor manualmente.
+
+- **Create Series** - `POST /api/time-block-series` → 201
+  - Body: `title` (1–200), `projectId` opcional, `startDate`, `endDate` opcional (>= startDate),
+    `pattern`: `type` DAILY | DAILY_INTERVAL | WEEKLY_WEEKDAYS | SINGLE, `interval` (>=1, DAILY_INTERVAL),
+    `weekdays` (subset não-vazio de 0-6, 0=domingo, WEEKLY_WEEKDAYS), `time` HH:mm, `durationMinutes` 1–1440
+  - Materializa occurrences em `time_blocks` até min(endDate, hoje+12 meses), cap 366
+  - 400 INVALID_SERIES_PATTERN / INVALID_SERIES_RANGE, 404 se `projectId` não pertence ao usuário
+- **List Series** - `GET /api/time-block-series` → 200
+- **Get Series** - `GET /api/time-block-series/:seriesId` → 200/404
+- **Update Series** - `PATCH /api/time-block-series/:seriesId` → 200 (split forward)
+  - Body: `effectiveFrom` (obrigatório, após o startDate da série) + campos de regra (title/projectId/endDate/pattern)
+  - A série antiga fecha em effectiveFrom-1; nova série + occurrences a partir de effectiveFrom; passado intacto
+  - 400 INVALID_SERIES_RANGE se effectiveFrom <= startDate
+- **Delete Series** - `DELETE /api/time-block-series/:seriesId` → 200 (soft delete série + occurrences futuras; passado preservado)
+
+IDs de outro usuário retornam 404 (owner scoping, nunca 403).
+
 ### Time Blocks
 
 > Requer ACCESS_TOKEN cookie (login/register primeiro). Requests de escrita

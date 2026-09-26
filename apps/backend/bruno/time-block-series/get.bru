@@ -1,0 +1,28 @@
+meta {
+  name: Get Series
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/time-block-series/:seriesId
+  body: none
+  auth: none
+}
+
+params:path {
+  seriesId: PASTE_SERIES_ID_HERE
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Get Series
+
+  Returns a non-deleted series owned by the authenticated user. Returns 200.
+
+  Requires ACCESS_TOKEN cookie. Replace `seriesId` with the id returned by
+  "Create Series" (another user's id returns 404, never 403).
+}
