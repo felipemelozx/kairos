@@ -6,9 +6,9 @@ jest.mock('@/stores/auth-store');
 
 const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
 
-const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: jest.fn(), replace: mockReplace }),
 }));
 
 describe('ProtectedRoute', () => {
@@ -17,7 +17,11 @@ describe('ProtectedRoute', () => {
   });
 
   it('should render children when authenticated', () => {
-    mockUseAuthStore.mockReturnValue({ user: { id: '1', email: 'a@b.com' }, isLoading: false });
+    mockUseAuthStore.mockReturnValue({
+      user: { id: '1', email: 'a@b.com' },
+      status: 'authenticated',
+      isLoading: false,
+    });
 
     render(
       <ProtectedRoute>
@@ -26,11 +30,10 @@ describe('ProtectedRoute', () => {
     );
 
     expect(screen.getByText('Protected Content')).toBeInTheDocument();
-    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('should redirect to home when not authenticated', () => {
-    mockUseAuthStore.mockReturnValue({ user: null, isLoading: false });
+    mockUseAuthStore.mockReturnValue({ user: null, status: 'anonymous', isLoading: false });
 
     render(
       <ProtectedRoute>
@@ -39,11 +42,11 @@ describe('ProtectedRoute', () => {
     );
 
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-    expect(mockPush).toHaveBeenCalledWith('/');
+    expect(mockReplace).toHaveBeenCalledWith('/');
   });
 
-  it('should show loading state while checking auth', () => {
-    mockUseAuthStore.mockReturnValue({ user: null, isLoading: true });
+  it('should not redirect while checking session (FIX-003)', () => {
+    mockUseAuthStore.mockReturnValue({ user: null, status: 'checking', isLoading: true });
 
     render(
       <ProtectedRoute>
@@ -52,6 +55,19 @@ describe('ProtectedRoute', () => {
     );
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('should show loading state while checking auth', () => {
+    mockUseAuthStore.mockReturnValue({ user: null, status: 'checking', isLoading: true });
+
+    render(
+      <ProtectedRoute>
+        <div>Protected Content</div>
+      </ProtectedRoute>
+    );
+
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });

@@ -46,14 +46,14 @@ describe('projectsStore', () => {
       expect(useProjectsStore.getState().isLoading).toBe(false);
     });
 
-    it('should set error on failure and keep the list intact', async () => {
+    it('should set error on failure and clear the stale list (FIX-003)', async () => {
       useProjectsStore.setState({ projects: [mockProject] });
       mockProjectsApi.list.mockRejectedValue(new Error('Network error'));
 
       await useProjectsStore.getState().fetchProjects();
 
       expect(useProjectsStore.getState().error).toBe('Network error');
-      expect(useProjectsStore.getState().projects).toEqual([mockProject]);
+      expect(useProjectsStore.getState().projects).toEqual([]);
       expect(useProjectsStore.getState().isLoading).toBe(false);
     });
   });

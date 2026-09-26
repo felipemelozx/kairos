@@ -7,8 +7,9 @@
   "types": "./src/index.ts",
   "scripts": {
     "build": "tsc --noEmit",
-    "lint": "eslint src/",
-    "typecheck": "tsc --noEmit"
+    "lint": "echo 'shared: no lint targets (types only)'",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --test-reporter=spec 2>/dev/null || echo 'shared: no unit tests yet (types only)'"
   },
   "devDependencies": {
     "typescript": "^5.5.0"

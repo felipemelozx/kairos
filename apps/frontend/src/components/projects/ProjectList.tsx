@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Project } from '@/lib/projects-api';
+import { useAuthStore } from '@/stores/auth-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { ProjectDeleteDialog } from '@/components/projects/ProjectDeleteDialog';
@@ -23,9 +24,10 @@ export function ProjectList() {
   const newProjectRef = useRef<HTMLButtonElement>(null);
   const deleteTriggerRef = useRef<HTMLElement | null>(null);
 
+  const userId = useAuthStore((s) => s.user?.id);
   useEffect(() => {
-    void fetchProjects();
-  }, [fetchProjects]);
+    void fetchProjects(userId);
+  }, [fetchProjects, userId]);
 
   const openCreate = () => {
     setEditing(null);
@@ -145,9 +147,9 @@ export function ProjectList() {
             className="nb-card border-danger bg-danger-subtle p-4 text-body text-danger"
           >
             <p>{error}</p>
-            <button
-              type="button"
-              onClick={() => void fetchProjects()}
+              <button
+                type="button"
+                onClick={() => void fetchProjects(userId)}
               className={`${secondaryButton} mt-3`}
             >
               Retry
@@ -169,7 +171,7 @@ export function ProjectList() {
           </div>
         ) : null}
 
-        {!isLoading && projects.length > 0 ? <div>{projectList}</div> : null}
+        {!isLoading && !error && projects.length > 0 ? <div>{projectList}</div> : null}
       </div>
 
       {deleting ? (

@@ -33,7 +33,7 @@ docs {
   post-response script — never paste it manually).
 
   Optional fields: `projectId` (must belong to the user, else 404),
-  `seriesId` (nullable UUID; not validated until SERIES-001). Not patchable.
+  `seriesId` (nullable UUID; must belong to the authenticated user, else 404; FIX-002). Not patchable.
 
   Returns 400 when title is blank/>200 chars or end <= start.
 

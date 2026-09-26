@@ -42,7 +42,10 @@ function buildHeaders(options: RequestInit): Headers {
   return headers;
 }
 
-async function tryRefresh(): Promise<boolean> {
+// FIX-003: single-flight refresh shared by concurrent 401s.
+let refreshPromise: Promise<boolean> | null = null;
+
+async function doRefreshRequest(): Promise<boolean> {
   try {
     const response = await fetch('/api/auth/refresh', {
       method: 'POST',
@@ -55,6 +58,15 @@ async function tryRefresh(): Promise<boolean> {
   }
 }
 
+async function tryRefresh(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = doRefreshRequest().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
 function toApiError(status: number, body: ApiErrorBody | undefined): ApiError {
   const message = body?.error?.message || `API error: ${status}`;
   return new ApiError(status, message, body?.error?.code, body?.error?.details);
@@ -65,6 +77,17 @@ async function parseErrorBody(response: Response): Promise<ApiErrorBody | undefi
     return (await response.json()) as ApiErrorBody;
   } catch {
     return undefined;
+  }
+}
+
+async function notifySessionExpired(): Promise<void> {
+  try {
+    const { useAuthStore } = await import('@/stores/auth-store');
+    const { useProjectsStore } = await import('@/stores/projects-store');
+    useAuthStore.getState().markSessionExpired();
+    useProjectsStore.getState().reset();
+  } catch {
+    // store import must never break error propagation
   }
 }
 
@@ -94,6 +117,13 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      !NO_REFRESH_ENDPOINTS.some((endpoint) => url.startsWith(endpoint))
+    ) {
+      // Terminal 401: session is gone — clear auth + sensitive stores.
+      await notifySessionExpired();
+    }
     throw toApiError(response.status, await parseErrorBody(response));
   }
 

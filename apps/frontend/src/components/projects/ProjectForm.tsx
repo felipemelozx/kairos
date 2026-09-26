@@ -83,7 +83,7 @@ export function ProjectForm({
 
     const errors = validateProject(
       { name, description, color },
-      { requireColor: true }
+      { requireColor: mode === 'create' }
     );
     setFieldErrors(errors);
 

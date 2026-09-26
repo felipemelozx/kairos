@@ -23,7 +23,7 @@ body:json {
 }
 
 vars:pre-request {
-  baseUrl: http://localhost:8080
+  // baseUrl comes from the selected Bruno environment (dev/staging/prod); do not override here.
 }
 
 script:post-response {

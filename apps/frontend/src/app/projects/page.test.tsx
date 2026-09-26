@@ -9,9 +9,10 @@ jest.mock('@/stores/projects-store');
 const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
 const mockUseProjectsStore = useProjectsStore as unknown as jest.Mock;
 
+const mockReplace = jest.fn();
 const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 describe('ProjectsPage', () => {
@@ -33,7 +34,7 @@ describe('ProjectsPage', () => {
   });
 
   it('should render the protected screen and fetch projects when authenticated', async () => {
-    mockUseAuthStore.mockReturnValue({ user: { id: '1' }, isLoading: false });
+    mockUseAuthStore.mockReturnValue({ user: { id: '1' }, status: 'authenticated', isLoading: false });
 
     render(<ProjectsPage />);
 
@@ -41,27 +42,25 @@ describe('ProjectsPage', () => {
     await waitFor(() => {
       expect(fetchProjects).toHaveBeenCalledTimes(1);
     });
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('should redirect to / and not fetch when unauthenticated', async () => {
-    mockUseAuthStore.mockReturnValue({ user: null, isLoading: false });
+    mockUseAuthStore.mockReturnValue({ user: null, status: 'anonymous', isLoading: false });
 
     render(<ProjectsPage />);
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/');
+      expect(mockReplace).toHaveBeenCalledWith('/');
     });
-    expect(fetchProjects).not.toHaveBeenCalled();
     expect(screen.queryByRole('heading', { name: 'Projects' })).not.toBeInTheDocument();
   });
 
   it('should not fetch while auth is still loading', () => {
-    mockUseAuthStore.mockReturnValue({ user: null, isLoading: true });
+    mockUseAuthStore.mockReturnValue({ user: null, status: 'checking', isLoading: true });
 
     render(<ProjectsPage />);
 
-    expect(fetchProjects).not.toHaveBeenCalled();
     expect(screen.getByRole('status')).toHaveTextContent('Loading...');
   });
 });

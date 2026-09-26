@@ -245,5 +245,35 @@ describe('apiFetch', () => {
       ).rejects.toMatchObject({ status: 401 });
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
+
+    it('should issue a single refresh for concurrent 401s (FIX-003 single-flight)', async () => {
+      mockGetCsrfToken.mockReturnValue('token');
+      const refreshOk = {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: () => Promise.resolve({}),
+      } as Response;
+      mockFetch.mockImplementation((input: string | URL | Request) => {
+        const url = String(input);
+        if (url === '/api/auth/refresh') {
+          return Promise.resolve(refreshOk);
+        }
+        if (mockFetch.mock.calls.filter((c) => String(c[0]) === url).length <= 1) {
+          return Promise.resolve(unauthorized());
+        }
+        return Promise.resolve(okJson({ success: true, data: 'ok' }));
+      });
+
+      const [a, b] = await Promise.all([
+        apiFetch<{ data: string }>('/api/a'),
+        apiFetch<{ data: string }>('/api/b'),
+      ]);
+
+      expect(a).toEqual({ success: true, data: 'ok' });
+      expect(b).toEqual({ success: true, data: 'ok' });
+      const refreshCalls = mockFetch.mock.calls.filter((c) => c[0] === '/api/auth/refresh');
+      expect(refreshCalls).toHaveLength(1);
+    });
   });
 });

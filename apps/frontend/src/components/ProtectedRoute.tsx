@@ -10,18 +10,19 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const { user, isLoading } = useAuthStore();
+  const { user, status, isLoading } = useAuthStore();
+  const checking = status === 'checking' || isLoading;
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/');
+    if (!checking && !user) {
+      router.replace('/');
     }
-  }, [isLoading, user, router]);
+  }, [checking, user, router]);
 
-  if (isLoading) {
+  if (checking) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-ink-muted" role="status">
+        <p className="text-ink-secondary" role="status">
           Loading...
         </p>
       </div>

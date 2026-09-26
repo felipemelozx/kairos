@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Project } from '@/lib/projects-api';
 
 interface ProjectCardProps {
@@ -35,7 +35,7 @@ const badgeArchived = 'status-badge neutral';
 const ghostButton =
   'inline-flex min-h-[40px] items-center gap-1.5 rounded-md px-2.5 py-1.5 text-button text-ink-secondary transition-colors hover:bg-accent-subtle hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
 const dangerSecondaryButton =
-  'inline-flex min-h-[40px] items-center gap-1.5 rounded-md px-2.5 py-1.5 text-button text-ink-secondary transition-colors hover:bg-accent-subtle hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[40px] items-center gap-1.5 rounded-md border border-danger bg-surface px-2.5 py-1.5 text-button text-danger transition-colors hover:bg-danger-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 disabled:cursor-not-allowed disabled:opacity-60';
 const primaryButton =
   'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-accent px-4 py-2.5 font-medium text-accent-contrast transition-colors hover:bg-accent-hover active:bg-accent-active focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-60';
 const secondaryButton =
@@ -51,6 +51,14 @@ export function ProjectCard({
   const [confirmingArchive, setConfirmingArchive] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [statusError, setStatusError] = useState('');
+  const cancelArchiveRef = useRef<HTMLButtonElement>(null);
+  const archiveTriggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (confirmingArchive) {
+      cancelArchiveRef.current?.focus();
+    }
+  }, [confirmingArchive]);
   const isActive = project.status === 'ACTIVE';
 
   const handleArchive = async () => {
@@ -99,7 +107,7 @@ export function ProjectCard({
       </div>
 
       {project.description ? (
-        <p className="text-body text-ink-secondary">{project.description}</p>
+        <p className="break-words text-body text-ink-secondary [overflow-wrap:anywhere]">{project.description}</p>
       ) : null}
 
       {statusError ? (
@@ -159,6 +167,7 @@ export function ProjectCard({
             {isActive ? (
               <button
                 type="button"
+                ref={archiveTriggerRef}
                 onClick={() => setConfirmingArchive(true)}
                 aria-label={`Archive ${project.name}`}
                 className={ghostButton}

@@ -8,30 +8,39 @@ import {
 
 interface ProjectsState {
   projects: Project[];
+  ownerId: string | null;
   isLoading: boolean;
   isSubmitting: boolean;
   error: string | null;
-  fetchProjects: () => Promise<void>;
+  fetchProjects: (ownerId?: string) => Promise<void>;
   createProject: (data: CreateProjectData) => Promise<Project>;
   updateProject: (id: string, data: UpdateProjectData) => Promise<Project>;
   deleteProject: (id: string) => Promise<void>;
+  reset: () => void;
 }
 
 const LOAD_ERROR = 'Could not load projects. Please try again.';
 
-export const useProjectsStore = create<ProjectsState>((set) => ({
+export const useProjectsStore = create<ProjectsState>((set, get) => ({
   projects: [],
+  ownerId: null,
   isLoading: false,
   isSubmitting: false,
   error: null,
 
-  fetchProjects: async () => {
+  fetchProjects: async (ownerId?: string) => {
+    // FIX-003: partition cache per user; never show previous user's data.
+    if (ownerId && ownerId !== get().ownerId) {
+      set({ projects: [], ownerId, error: null });
+    }
     set({ isLoading: true, error: null });
     try {
       const projects = await projectsApi.list();
-      set({ projects, isLoading: false });
+      set({ projects, isLoading: false, ownerId: ownerId ?? get().ownerId });
     } catch (error) {
+      // FIX-003: on load failure do not keep stale list visible alongside error.
       set({
+        projects: [],
         isLoading: false,
         error: error instanceof Error ? error.message : LOAD_ERROR,
       });
@@ -77,5 +86,9 @@ export const useProjectsStore = create<ProjectsState>((set) => ({
       set({ isSubmitting: false });
       throw error;
     }
+  },
+
+  reset: () => {
+    set({ projects: [], ownerId: null, error: null, isLoading: false, isSubmitting: false });
   },
 }));

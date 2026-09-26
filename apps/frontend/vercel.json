@@ -4,8 +4,7 @@
   "framework": "nextjs",
   "env": {
     "NEXT_PUBLIC_API_URL": {
-      "description": "Backend API URL",
-      "value": "https://api.yourdomain.com"
+      "description": "Backend API URL (configure per environment in Vercel dashboard; never commit production URLs)"
     }
   }
 }

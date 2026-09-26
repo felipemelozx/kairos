@@ -35,4 +35,10 @@ describe('getCsrfToken', () => {
 
     expect(token).toBeNull();
   });
+
+  it('should not throw on malformed escape sequences (FIX-003)', () => {
+    document.cookie = 'CSRF_TOKEN=%E0%A4%A; path=/';
+
+    expect(() => getCsrfToken()).not.toThrow();
+  });
 });

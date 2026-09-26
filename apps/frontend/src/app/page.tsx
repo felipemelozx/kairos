@@ -8,7 +8,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 export default function HomePage() {
   const [showRegister, setShowRegister] = useState(false);
-  const [draft, setDraft] = useState({ name: '', email: '', password: '' });
+  // FIX-003: never persist passwords in page state.
+  const [draft, setDraft] = useState({ name: '', email: '' });
   const { user, isLoading, logout } = useAuthStore();
   const [logoutError, setLogoutError] = useState('');
 
@@ -130,7 +131,7 @@ export default function HomePage() {
             {user ? (
               <div className="nb-card mx-auto mt-8 max-w-md p-6">
                 <p className="text-lg font-medium text-ink mb-1">{user.name}</p>
-                <p className="text-sm text-ink-secondary mb-6">{user.email}</p>
+                <p className="text-sm text-ink-secondary mb-6 break-words [overflow-wrap:anywhere]">{user.email}</p>
                 <Link
                   href="/projects"
                   className="btn-persuade mb-3 w-full text-base"
@@ -200,17 +201,17 @@ export default function HomePage() {
                     onSwitchToLogin={() => setShowRegister(false)}
                     initialName={draft.name}
                     initialEmail={draft.email}
-                    initialPassword={draft.password}
-                    onDraftChange={(d) => setDraft(d)}
+                    initialPassword=""
+                    onDraftChange={(d) => setDraft({ name: d.name, email: d.email })}
                   />
                 ) : (
                   <LoginForm
-                    key="login"
+                    key={user ? 'login-authed' : 'login'}
                     onSwitchToRegister={() => setShowRegister(true)}
                     initialEmail={draft.email}
-                    initialPassword={draft.password}
+                    initialPassword=""
                     onDraftChange={(d) =>
-                      setDraft((prev) => ({ ...prev, email: d.email, password: d.password }))
+                      setDraft((prev) => ({ ...prev, email: d.email }))
                     }
                   />
                 )}
