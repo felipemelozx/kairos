@@ -267,6 +267,41 @@ class TimeBlockServiceTest {
         verify(timeBlockRepository, never()).softDeleteByIdAndUserId(any(UUID.class), any(UUID.class), any(Instant.class));
     }
 
+    @Test
+    void shouldRejectForeignSeriesId() {
+        UUID userA = UUID.randomUUID();
+        UUID userB = UUID.randomUUID();
+        UUID seriesId = UUID.randomUUID();
+        com.felipemelozx.kairos.repository.TimeBlockSeriesRepository seriesRepository =
+                org.mockito.Mockito.mock(com.felipemelozx.kairos.repository.TimeBlockSeriesRepository.class);
+        when(seriesRepository.findByIdAndUserIdAndDeletedAtIsNull(seriesId, userB))
+                .thenReturn(Optional.empty());
+        TimeBlockService scoped = new TimeBlockService(timeBlockRepository, projectRepository, seriesRepository);
+        CreateTimeBlockRequest request = new CreateTimeBlockRequest("Hijack",
+                Instant.parse("2026-10-01T09:00:00Z"), Instant.parse("2026-10-01T10:00:00Z"), null, seriesId);
+
+        AppError error = assertErr(scoped.create(userB, request));
+
+        assertThat(error.code()).isEqualTo("NOT_FOUND");
+        verify(timeBlockRepository, never()).save(any(TimeBlock.class));
+    }
+
+    @Test
+    void shouldRejectUpdateAndDeleteOfSeriesOccurrence() {
+        UUID userId = UUID.randomUUID();
+        TimeBlock block = storedBlock(userId, "Series occurrence");
+        block.setSeriesId(UUID.randomUUID());
+        when(timeBlockRepository.findByIdAndUserIdAndDeletedAtIsNull(block.getId(), userId))
+                .thenReturn(Optional.of(block));
+
+        AppError updateErr = assertErr(timeBlockService.update(block.getId(), userId,
+                new UpdateTimeBlockRequest("Renamed", null, null, null)));
+        AppError deleteErr = assertErr(timeBlockService.softDelete(block.getId(), userId));
+
+        assertThat(updateErr.code()).isEqualTo("INVALID_SERIES_RANGE");
+        assertThat(deleteErr.code()).isEqualTo("INVALID_SERIES_RANGE");
+    }
+
     private TimeBlock storedBlock(UUID userId, String title) {
         TimeBlock block = new TimeBlock();
         block.setId(UUID.randomUUID());

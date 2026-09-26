@@ -39,7 +39,7 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
                 String userId = jwtService.getUserIdFromToken(token);
                 int tokenVersion = jwtService.getTokenVersionFromToken(token);
                 UUID id = UUID.fromString(userId);
-                boolean versionMatches = userRepository.findById(id)
+                boolean versionMatches = userRepository.findByIdAndActiveIsTrue(id)
                         .map(user -> {
                             int current = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
                             return tokenVersion == current;

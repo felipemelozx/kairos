@@ -11,9 +11,14 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmailAndActiveIsTrue(String email);
+    Optional<User> findByIdAndActiveIsTrue(UUID id);
     boolean existsByEmail(String email);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
     Optional<User> findByIdForUpdate(UUID id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.id = :id and u.active = true")
+    Optional<User> findByIdForUpdateAndActiveIsTrue(UUID id);
 }

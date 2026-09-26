@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,6 +19,9 @@ public interface TimeBlockSeriesRepository extends JpaRepository<TimeBlockSeries
     Optional<TimeBlockSeries> findByIdAndUserIdAndDeletedAtIsNull(UUID id, UUID userId);
 
     List<TimeBlockSeries> findByEndDateIsNullAndDeletedAtIsNull();
+
+    @Query("select s from TimeBlockSeries s where s.deletedAt is null and (s.endDate is null or s.endDate >= :today)")
+    List<TimeBlockSeries> findActiveForRollForward(@Param("today") LocalDate today);
 
     @Modifying
     @Query("UPDATE TimeBlockSeries s SET s.deletedAt = :deletedAt " +

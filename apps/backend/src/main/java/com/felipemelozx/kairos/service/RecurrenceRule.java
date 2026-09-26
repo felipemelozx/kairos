@@ -28,6 +28,12 @@ public final class RecurrenceRule {
     }
 
     public static final int MAX_OCCURRENCES = 366;
+    public static final int MAX_INTERVAL = 365;
+    /** Defensive cap on day-iterations per expansion (DoS guard). */
+    static final int MAX_ITERATION_DAYS = 366 * 3 + 31;
+    /** Absolute bounds accepted for series windows. */
+    static final LocalDate MIN_DATE = LocalDate.of(2000, 1, 1);
+    static final LocalDate MAX_DATE = LocalDate.of(2100, 12, 31);
 
     private static final Pattern TIME_PATTERN = Pattern.compile("^([01]\\d|2[0-3]):[0-5]\\d$");
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -65,8 +71,9 @@ public final class RecurrenceRule {
         int interval = 1;
         if (type == Type.DAILY_INTERVAL) {
             interval = request.interval() == null ? 1 : request.interval();
-            if (interval < 1) {
-                throw new IllegalArgumentException("Series pattern interval must be >= 1");
+            if (interval < 1 || interval > MAX_INTERVAL) {
+                throw new IllegalArgumentException(
+                        "Series pattern interval must be between 1 and " + MAX_INTERVAL);
             }
         }
         Set<Integer> weekdays = Set.of();
@@ -122,16 +129,33 @@ public final class RecurrenceRule {
         if (from == null || to == null || from.isAfter(to)) {
             return dates;
         }
+        if (from.isBefore(MIN_DATE) || to.isAfter(MAX_DATE)) {
+            throw new IllegalArgumentException(
+                    "Series window must be within 2000-01-01 and 2100-12-31");
+        }
         if (type == Type.SINGLE) {
             dates.add(from);
             return dates;
         }
+        if (type == Type.DAILY_INTERVAL) {
+            // Jump by interval instead of scanning day-by-day (DoS guard for huge intervals).
+            LocalDate current = from;
+            int iterations = 0;
+            while (!current.isAfter(to) && dates.size() < MAX_OCCURRENCES && iterations < MAX_OCCURRENCES) {
+                dates.add(current);
+                current = current.plusDays(interval);
+                iterations++;
+            }
+            return dates;
+        }
         LocalDate current = from;
-        while (!current.isAfter(to) && dates.size() < MAX_OCCURRENCES) {
+        int scanned = 0;
+        while (!current.isAfter(to) && dates.size() < MAX_OCCURRENCES && scanned < MAX_ITERATION_DAYS) {
             if (matches(current, from)) {
                 dates.add(current);
             }
             current = current.plusDays(1);
+            scanned++;
         }
         return dates;
     }

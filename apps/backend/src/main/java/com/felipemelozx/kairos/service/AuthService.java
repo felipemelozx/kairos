@@ -110,7 +110,7 @@ public class AuthService {
         } catch (IllegalArgumentException e) {
             return Result.err(ErrorCode.UNAUTHORIZED, "Refresh token expired or invalid");
         }
-        Optional<User> maybeUser = userRepository.findByIdForUpdate(id);
+        Optional<User> maybeUser = userRepository.findByIdForUpdateAndActiveIsTrue(id);
         if (maybeUser.isEmpty()) {
             return Result.err(ErrorCode.UNAUTHORIZED, "Refresh token expired or invalid");
         }
@@ -127,7 +127,7 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public Result<User> findUserById(java.util.UUID userId) {
-        return userRepository.findById(userId)
+        return userRepository.findByIdAndActiveIsTrue(userId)
                 .map(Result::<User>ok)
                 .orElseGet(() -> Result.err(ErrorCode.NOT_FOUND, "User not found"));
     }

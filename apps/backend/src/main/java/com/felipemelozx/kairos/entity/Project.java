@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -44,6 +45,10 @@ public class Project {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    @Version
+    @Column(nullable = false)
+    private Long version = 0L;
 
     public Project() {
         // Required by JPA/Hibernate
@@ -111,5 +116,13 @@ public class Project {
 
     public void setDeletedAt(Instant deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }

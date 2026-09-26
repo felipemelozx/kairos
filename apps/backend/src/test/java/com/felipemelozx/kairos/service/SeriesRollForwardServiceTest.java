@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,29 +48,51 @@ class SeriesRollForwardServiceTest {
     void shouldExtendIndefiniteSeriesSkippingExisting() {
         TimeBlockSeries series = indefiniteSeries("DAILY", LocalDate.parse("2026-09-01"));
         TimeBlock existing = storedBlock(series, Instant.parse("2026-09-01T09:00:00Z"));
-        when(seriesRepository.findByEndDateIsNullAndDeletedAtIsNull()).thenReturn(List.of(series));
+        when(seriesRepository.findActiveForRollForward(LocalDate.parse("2026-09-25")))
+                .thenReturn(List.of(series));
+        when(seriesRepository.findById(series.getId())).thenReturn(Optional.of(series));
         when(timeBlockRepository.findBySeriesIdAndUserIdAndDeletedAtIsNullOrderByStartDateTimeAsc(
                 series.getId(), series.getUserId())).thenReturn(List.of(existing));
 
         int created = rollForwardService.extendIndefiniteSeries();
 
-        // 2026-09-01..2027-09-25 daily = 390 dates, capped at 366, minus 1 existing
-        assertThat(created).isEqualTo(365);
+        // Incremental: window starts 2026-09-02, horizon 2027-09-25 -> capped at 366 new.
+        assertThat(created).isEqualTo(366);
         ArgumentCaptor<List<TimeBlock>> blocks = ArgumentCaptor.forClass(List.class);
         verify(timeBlockRepository).saveAll(blocks.capture());
-        assertThat(blocks.getValue()).hasSize(365);
+        assertThat(blocks.getValue()).hasSize(366);
         assertThat(blocks.getValue().get(0).getStartDateTime()).isEqualTo(Instant.parse("2026-09-02T09:00:00Z"));
         assertThat(blocks.getValue()).allMatch(b -> b.getSeriesId().equals(series.getId()));
         assertThat(blocks.getValue()).allMatch(b -> !b.isOverride());
     }
 
     @Test
+    void shouldResumeOldSeriesNearHorizon() {
+        // FIX-002 regression: series older than 366 days must still reach the horizon.
+        TimeBlockSeries series = indefiniteSeries("DAILY", LocalDate.parse("2024-01-01"));
+        TimeBlock last = storedBlock(series, Instant.parse("2026-09-20T09:00:00Z"));
+        when(seriesRepository.findActiveForRollForward(LocalDate.parse("2026-09-25")))
+                .thenReturn(List.of(series));
+        when(seriesRepository.findById(series.getId())).thenReturn(Optional.of(series));
+        when(timeBlockRepository.findBySeriesIdAndUserIdAndDeletedAtIsNullOrderByStartDateTimeAsc(
+                series.getId(), series.getUserId())).thenReturn(List.of(last));
+
+        int created = rollForwardService.extendIndefiniteSeries();
+
+        assertThat(created).isPositive();
+        ArgumentCaptor<List<TimeBlock>> blocks = ArgumentCaptor.forClass(List.class);
+        verify(timeBlockRepository).saveAll(blocks.capture());
+        assertThat(blocks.getValue().get(0).getStartDateTime())
+                .isEqualTo(Instant.parse("2026-09-21T09:00:00Z"));
+    }
+
+    @Test
     void shouldDoNothingWhenFullyMaterialized() {
         TimeBlockSeries series = indefiniteSeries("SINGLE", LocalDate.parse("2026-09-01"));
         TimeBlock existing = storedBlock(series, Instant.parse("2026-09-01T09:00:00Z"));
-        when(seriesRepository.findByEndDateIsNullAndDeletedAtIsNull()).thenReturn(List.of(series));
-        when(timeBlockRepository.findBySeriesIdAndUserIdAndDeletedAtIsNullOrderByStartDateTimeAsc(
-                series.getId(), series.getUserId())).thenReturn(List.of(existing));
+        when(seriesRepository.findActiveForRollForward(LocalDate.parse("2026-09-25")))
+                .thenReturn(List.of(series));
+        when(seriesRepository.findById(series.getId())).thenReturn(Optional.of(series));
 
         int created = rollForwardService.extendIndefiniteSeries();
 
@@ -81,7 +104,9 @@ class SeriesRollForwardServiceTest {
     void shouldSkipSeriesWithInvalidPattern() {
         TimeBlockSeries series = indefiniteSeries("DAILY", LocalDate.parse("2026-09-01"));
         series.setPattern("broken");
-        when(seriesRepository.findByEndDateIsNullAndDeletedAtIsNull()).thenReturn(List.of(series));
+        when(seriesRepository.findActiveForRollForward(LocalDate.parse("2026-09-25")))
+                .thenReturn(List.of(series));
+        when(seriesRepository.findById(series.getId())).thenReturn(Optional.of(series));
 
         int created = rollForwardService.extendIndefiniteSeries();
 

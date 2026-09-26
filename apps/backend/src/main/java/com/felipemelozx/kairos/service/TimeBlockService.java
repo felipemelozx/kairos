@@ -7,9 +7,11 @@ import com.felipemelozx.kairos.dto.request.UpdateTimeBlockRequest;
 import com.felipemelozx.kairos.dto.response.TimeBlockResponse;
 import com.felipemelozx.kairos.entity.TimeBlock;
 import com.felipemelozx.kairos.repository.ProjectRepository;
+import com.felipemelozx.kairos.repository.TimeBlockSeriesRepository;
 import com.felipemelozx.kairos.repository.TimeBlockRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,10 +27,19 @@ public class TimeBlockService {
 
     private final TimeBlockRepository timeBlockRepository;
     private final ProjectRepository projectRepository;
+    private final TimeBlockSeriesRepository seriesRepository;
 
-    public TimeBlockService(TimeBlockRepository timeBlockRepository, ProjectRepository projectRepository) {
+    @Autowired
+    public TimeBlockService(TimeBlockRepository timeBlockRepository, ProjectRepository projectRepository,
+            TimeBlockSeriesRepository seriesRepository) {
         this.timeBlockRepository = timeBlockRepository;
         this.projectRepository = projectRepository;
+        this.seriesRepository = seriesRepository;
+    }
+
+    /** Backwards-compatible constructor for existing tests/callers without series scope. */
+    public TimeBlockService(TimeBlockRepository timeBlockRepository, ProjectRepository projectRepository) {
+        this(timeBlockRepository, projectRepository, null);
     }
 
     @Transactional
@@ -45,6 +56,12 @@ public class TimeBlockService {
         if (request.projectId() != null) {
             Result<Void> projectCheck = validateProject(userId, request.projectId());
             if (projectCheck instanceof Result.Err<Void> err) {
+                return Result.err(err.error());
+            }
+        }
+        if (request.seriesId() != null) {
+            Result<Void> seriesCheck = validateSeries(userId, request.seriesId());
+            if (seriesCheck instanceof Result.Err<Void> err) {
                 return Result.err(err.error());
             }
         }
@@ -105,6 +122,10 @@ public class TimeBlockService {
             return Result.err(ErrorCode.NOT_FOUND, "Time block not found");
         }
         TimeBlock block = maybeBlock.get();
+        if (block.getSeriesId() != null) {
+            return Result.err(ErrorCode.INVALID_SERIES_RANGE,
+                    "Series occurrences are managed via /api/time-block-series (single-occurrence edit is out of scope)");
+        }
 
         if (request.title() != null) {
             Result<Void> titleCheck = validateTitle(request.title());
@@ -150,8 +171,13 @@ public class TimeBlockService {
     @Transactional
     public Result<Void> softDelete(UUID id, UUID userId) {
         log.info("Deleting time block: id={}, userId={}", id, userId);
-        if (timeBlockRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId).isEmpty()) {
+        var existing = timeBlockRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId);
+        if (existing.isEmpty()) {
             return Result.err(ErrorCode.NOT_FOUND, "Time block not found");
+        }
+        if (existing.get().getSeriesId() != null) {
+            return Result.err(ErrorCode.INVALID_SERIES_RANGE,
+                    "Series occurrences are managed via /api/time-block-series (single-occurrence edit is out of scope)");
         }
 
         timeBlockRepository.softDeleteByIdAndUserId(id, userId, Instant.now());
@@ -169,6 +195,17 @@ public class TimeBlockService {
     private Result<Void> validateRange(Instant start, Instant end) {
         if (start == null || end == null || !end.isAfter(start)) {
             return Result.err(ErrorCode.INVALID_TIME_RANGE);
+        }
+        return Result.ok(null);
+    }
+
+    private Result<Void> validateSeries(UUID userId, UUID seriesId) {
+        if (seriesRepository == null) {
+            return Result.err(ErrorCode.NOT_FOUND, "Time block series not found");
+        }
+        boolean owned = seriesRepository.findByIdAndUserIdAndDeletedAtIsNull(seriesId, userId).isPresent();
+        if (!owned) {
+            return Result.err(ErrorCode.NOT_FOUND, "Time block series not found");
         }
         return Result.ok(null);
     }

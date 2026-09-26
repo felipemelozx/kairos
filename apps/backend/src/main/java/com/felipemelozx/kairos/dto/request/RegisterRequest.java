@@ -8,4 +8,13 @@ public record RegisterRequest(
     @NotBlank @Email String email,
     @NotBlank @Size(min = 8) String password,
     @NotBlank @Size(max = 100) String name
-) {}
+) {
+    public RegisterRequest {
+        if (email != null) {
+            email = email.trim();
+        }
+        if (name != null) {
+            name = name.trim();
+        }
+    }
+}
