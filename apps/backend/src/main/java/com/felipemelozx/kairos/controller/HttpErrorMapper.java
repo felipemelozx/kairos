@@ -28,7 +28,8 @@ public final class HttpErrorMapper {
             case EMAIL_EXISTS -> HttpStatus.CONFLICT;
             case INVALID_CREDENTIALS, UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case INVALID_PROJECT_NAME, INVALID_COLOR, INVALID_TIME_BLOCK_TITLE, INVALID_TIME_RANGE -> HttpStatus.BAD_REQUEST;
+            case INVALID_PROJECT_NAME, INVALID_COLOR, INVALID_TIME_BLOCK_TITLE, INVALID_TIME_RANGE,
+                    INVALID_SERIES_PATTERN, INVALID_SERIES_RANGE -> HttpStatus.BAD_REQUEST;
         };
     }
 

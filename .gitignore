@@ -79,10 +79,8 @@ logs/
 Thumbs.db
 *.swp
 
-### AIOS Local ###
-.aios-core/local/
+### Local AI tool settings ###
 .claude/settings.local.json
-.aios/install-log.txt
 
 ### IDEs & AI Tools Configuration ###
 .cursor/
@@ -92,7 +90,6 @@ Thumbs.db
 .opencode/
 .idea/
 AGENTS.md
-.aios-core/
 .claude/
 .github/agents/
 
@@ -108,15 +105,11 @@ axios/
 ### Coverage ###
 coverage/
 
-# Environment & Secrets (AIOX)
+# Environment & Secrets
 .env.*.local
 
-# Dependencies (AIOX)
+# Dependencies
 node_modules
-
-# AIOX Local (AIOX)
-.aiox-core/local/
-.aiox/install-log.txt
 
 # Design tooling (local artifacts)
 .impeccable/

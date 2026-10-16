@@ -1,0 +1,28 @@
+meta {
+  name: Get Project
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/projects/:projectId
+  body: none
+  auth: none
+}
+
+params:path {
+  projectId: PASTE_PROJECT_ID_HERE
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Get Project
+
+  Returns a non-deleted project owned by the authenticated user. Returns 200.
+
+  Requires ACCESS_TOKEN cookie. Replace `projectId` with the id returned by
+  "Create Project" (another user's id returns 404, never 403).
+}
