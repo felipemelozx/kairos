@@ -21,7 +21,6 @@ reviews:
       - "draft"
     drafts: false
   path_filters:
-    - "!**/.aiox-core/**"
     - "!**/node_modules/**"
     - "!**/.next/**"
     - "!**/dist/**"
@@ -34,7 +33,7 @@ reviews:
       instructions: |
         Review TypeScript/React code for Next.js 14 best practices.
         Check for: proper use of RSC vs client components, correct data fetching patterns,
-        absolute imports with @/ alias (no relative imports per Constitution Article VI),
+        absolute imports with @/ alias,
         proper error boundaries, and accessibility compliance.
         Verify alignment with Turborepo build pipeline.
     - path: "apps/backend/**"
@@ -51,21 +50,21 @@ reviews:
     - path: ".github/agents/**"
       instructions: |
         Review GitHub agent definition files (*.agent.md).
-        Verify: proper agent persona definition, clear authority boundaries aligned with Constitution Article II,
+        Verify: proper agent persona definition and clear authority boundaries,
         correct tool assignments, no overlapping authorities between agents,
         and that activation instructions are clear and actionable.
-        Ensure agents follow the naming convention and are listed in AGENTS.md activation table.
+        Ensure agents follow the naming convention and are documented where applicable.
     - path: ".agents/skills/**"
       instructions: |
         Review local skill definitions.
         Verify: SKILL.md files are properly structured, instructions are clear and actionable,
         skills are IDE-agnostic and portable across different AI coding assistants.
         Check for proper frontmatter, resource references, and no hidden executable logic
-        that should live in squads/ per Article XI (Squad-First Portability).
+        that should live in the canonical project location rather than hidden in IDE projections.
     - path: "docs/**"
       instructions: |
         Review documentation for accuracy and consistency.
-        Ensure stories follow the format in docs/stories/ and specs trace to requirements (Article IV).
+        Ensure stories follow the format in docs/stories/ and specifications trace to requirements.
     - path: "infrastructure/**"
       instructions: |
         Review infrastructure-as-code changes carefully.

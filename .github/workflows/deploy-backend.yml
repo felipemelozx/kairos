@@ -43,7 +43,6 @@ jobs:
             --exclude '.git' \
             --exclude 'target' \
             --exclude '.next' \
-            --exclude '.aios-core' \
             --exclude '.claude' \
             ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/kairos/
 

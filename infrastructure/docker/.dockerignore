@@ -20,8 +20,6 @@ target/
 README.md
 docs/
 
-# AIOS (not needed in Docker image)
-.aios-core/
 .claude/
 .antigravity/
 .codex/
