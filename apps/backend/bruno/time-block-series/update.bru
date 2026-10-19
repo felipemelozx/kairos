@@ -1,0 +1,56 @@
+meta {
+  name: Update Series
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/api/time-block-series/:seriesId
+  body: json
+  auth: none
+}
+
+params:path {
+  seriesId: PASTE_SERIES_ID_HERE
+}
+
+headers {
+  Content-Type: application/json
+  X-CSRF-Token: {{csrfToken}}
+}
+
+body:json {
+  {
+    "effectiveFrom": "2026-11-01",
+    "pattern": {
+      "type": "DAILY",
+      "time": "10:00",
+      "durationMinutes": 30
+    }
+  }
+}
+
+docs {
+  # Update Series (split forward)
+
+  Split-forward edit: closes the current series the day before `effectiveFrom`
+  and creates a new series starting at `effectiveFrom` with the new rule.
+  History (occurrences before `effectiveFrom`) is never rewritten. Returns 200
+  with the NEW series.
+
+  Requires ACCESS_TOKEN cookie + X-CSRF-Token header
+  (the `csrfToken` env var is auto-filled by the login/register/refresh
+  post-response script — never paste it manually).
+
+  Body: `effectiveFrom` (required, must be after the series startDate),
+  plus any of `title`, `projectId`, `endDate`, `pattern` (same shape as
+  create; omitted fields keep the old rule).
+
+  Returns 400 INVALID_SERIES_RANGE when `effectiveFrom` is not after the
+  series start, 400 INVALID_SERIES_PATTERN on bad pattern, 404 when the
+  series (or projectId) does not belong to the user.
+
+  NOTE: the backend log line "Request without Origin and Referer headers"
+  is a harmless WARN (fail-open for non-browser clients like Bruno) — it does
+  NOT block the request.
+}

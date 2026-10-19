@@ -1,0 +1,42 @@
+meta {
+  name: Create Project
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/projects
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-CSRF-Token: {{csrfToken}}
+}
+
+body:json {
+  {
+    "name": "Study English",
+    "description": "Daily English practice",
+    "color": "#3B82F6"
+  }
+}
+
+docs {
+  # Create Project
+
+  Creates a project owned by the authenticated user. Returns 201.
+
+  Requires ACCESS_TOKEN cookie (login/register first) + X-CSRF-Token header
+  (the `csrfToken` env var is auto-filled by the login/register/refresh
+  post-response script — never paste it manually).
+
+  Body: `name` (1–100, required), `description` (max 500, optional),
+  `color` (#RRGGBB, required). Returns 400 on validation error.
+
+  NOTE: the backend log line "Request without Origin and Referer headers"
+  is a harmless WARN (fail-open for non-browser clients like Bruno) — it does
+  NOT block the request. Real failures come with HTTP status: 401 = login
+  first, 403 = missing/wrong X-CSRF-Token.
+}

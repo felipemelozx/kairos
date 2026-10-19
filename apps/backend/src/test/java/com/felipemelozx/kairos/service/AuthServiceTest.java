@@ -1,10 +1,11 @@
 package com.felipemelozx.kairos.service;
 
+import com.felipemelozx.kairos.common.AppError;
+import com.felipemelozx.kairos.common.Result;
 import com.felipemelozx.kairos.dto.request.RegisterRequest;
 import com.felipemelozx.kairos.dto.response.UserResponse;
 import com.felipemelozx.kairos.entity.User;
 import com.felipemelozx.kairos.entity.enums.AuthProvider;
-import com.felipemelozx.kairos.exception.BusinessException;
 import com.felipemelozx.kairos.repository.UserRepository;
 import com.felipemelozx.kairos.security.jwt.JwtService;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -50,7 +50,7 @@ class AuthServiceTest {
             return u;
         });
 
-        UserResponse result = authService.register(request);
+        UserResponse result = assertOk(authService.register(request));
 
         assertThat(result.email()).isEqualTo("new@example.com");
         assertThat(result.name()).isEqualTo("John");
@@ -62,9 +62,10 @@ class AuthServiceTest {
         RegisterRequest request = new RegisterRequest("exists@example.com", "password123", "John");
         when(userRepository.existsByEmail("exists@example.com")).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.register(request))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("already registered");
+        AppError error = assertErr(authService.register(request));
+
+        assertThat(error.code()).isEqualTo("EMAIL_EXISTS");
+        assertThat(error.message()).contains("already registered");
     }
 
     @Test
@@ -73,7 +74,7 @@ class AuthServiceTest {
         when(userRepository.findByEmailAndActiveIsTrue("test@example.com")).thenReturn(java.util.Optional.of(user));
         when(passwordEncoder.matches("password123", "hashedPassword")).thenReturn(true);
 
-        UserResponse result = authService.login(new com.felipemelozx.kairos.dto.request.LoginRequest("test@example.com", "password123"));
+        UserResponse result = assertOk(authService.login(new com.felipemelozx.kairos.dto.request.LoginRequest("test@example.com", "password123")));
 
         assertThat(result.email()).isEqualTo("test@example.com");
     }
@@ -84,9 +85,10 @@ class AuthServiceTest {
         when(userRepository.findByEmailAndActiveIsTrue("test@example.com")).thenReturn(java.util.Optional.of(user));
         when(passwordEncoder.matches("wrongPassword", "hashedPassword")).thenReturn(false);
 
-        assertThatThrownBy(() -> authService.login(new com.felipemelozx.kairos.dto.request.LoginRequest("test@example.com", "wrongPassword")))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Invalid");
+        AppError error = assertErr(authService.login(new com.felipemelozx.kairos.dto.request.LoginRequest("test@example.com", "wrongPassword")));
+
+        assertThat(error.code()).isEqualTo("INVALID_CREDENTIALS");
+        assertThat(error.message()).contains("Invalid");
     }
 
     @Test
@@ -131,7 +133,7 @@ class AuthServiceTest {
             return u;
         });
 
-        UserResponse result = authService.register(request);
+        UserResponse result = assertOk(authService.register(request));
 
         assertThat(result.email()).isEqualTo("new@example.com");
         verify(userRepository).existsByEmail("new@example.com");
@@ -142,9 +144,10 @@ class AuthServiceTest {
         RegisterRequest request = new RegisterRequest("Example.com", "password123", "John");
         when(userRepository.existsByEmail("example.com")).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.register(request))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("already registered");
+        AppError error = assertErr(authService.register(request));
+
+        assertThat(error.code()).isEqualTo("EMAIL_EXISTS");
+        assertThat(error.message()).contains("already registered");
 
         verify(userRepository).existsByEmail("example.com");
         verify(userRepository, never()).save(any(User.class));
@@ -156,8 +159,8 @@ class AuthServiceTest {
         when(userRepository.findByEmailAndActiveIsTrue("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password123", "hashedPassword")).thenReturn(true);
 
-        UserResponse result = authService.login(
-                new com.felipemelozx.kairos.dto.request.LoginRequest("  TEST@Example.COM  ", "password123"));
+        UserResponse result = assertOk(authService.login(
+                new com.felipemelozx.kairos.dto.request.LoginRequest("  TEST@Example.COM  ", "password123")));
 
         assertThat(result.email()).isEqualTo("test@example.com");
         verify(userRepository).findByEmailAndActiveIsTrue("test@example.com");
@@ -177,6 +180,16 @@ class AuthServiceTest {
 
         assertThat(result.email()).isEqualTo("google@example.com");
         verify(userRepository).findByEmailAndActiveIsTrue("google@example.com");
+    }
+
+    private <T> T assertOk(Result<T> result) {
+        assertThat(result).isInstanceOf(Result.Ok.class);
+        return ((Result.Ok<T>) result).value();
+    }
+
+    private <T> AppError assertErr(Result<T> result) {
+        assertThat(result).isInstanceOf(Result.Err.class);
+        return ((Result.Err<T>) result).error();
     }
 
     private User createUser(String email, String passwordHash, String name) {

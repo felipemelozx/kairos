@@ -1,0 +1,28 @@
+meta {
+  name: Get Time Block
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/time-blocks/:blockId
+  body: none
+  auth: none
+}
+
+params:path {
+  blockId: PASTE_BLOCK_ID_HERE
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Get Time Block
+
+  Returns a non-deleted time block owned by the authenticated user. Returns 200.
+
+  Requires ACCESS_TOKEN cookie. Replace `blockId` with the id returned by
+  "Create Time Block" (another user's id returns 404, never 403).
+}

@@ -240,6 +240,8 @@ Are validations applied correctly?
 
 Are tests included?
 
+Are the Bruno requests updated for every created/edited endpoint (`apps/backend/bruno/` + `README.md`)?
+
 Is this decision technical or product-related?
 
 If unsure → ask.

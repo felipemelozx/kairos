@@ -1,0 +1,23 @@
+meta {
+  name: List Projects
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/projects
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # List Projects
+
+  Lists non-deleted projects owned by the authenticated user. Returns 200.
+
+  Requires ACCESS_TOKEN cookie (login/register first).
+}

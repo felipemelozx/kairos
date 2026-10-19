@@ -1,0 +1,36 @@
+meta {
+  name: Delete Time Block
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/time-blocks/:blockId
+  body: none
+  auth: none
+}
+
+params:path {
+  blockId: PASTE_BLOCK_ID_HERE
+}
+
+headers {
+  Content-Type: application/json
+  X-CSRF-Token: {{csrfToken}}
+}
+
+docs {
+  # Delete Time Block
+
+  Soft delete — the block leaves the list but history is preserved. Returns 200.
+
+  Requires ACCESS_TOKEN cookie + X-CSRF-Token header
+  (the `csrfToken` env var is auto-filled by the login/register/refresh
+  post-response script — never paste it manually).
+
+  Returns 404 when the block does not belong to the user.
+
+  NOTE: the backend log line "Request without Origin and Referer headers"
+  is a harmless WARN (fail-open for non-browser clients like Bruno) — it does
+  NOT block the request.
+}

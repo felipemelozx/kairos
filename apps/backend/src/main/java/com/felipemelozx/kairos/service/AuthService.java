@@ -1,11 +1,12 @@
 package com.felipemelozx.kairos.service;
 
+import com.felipemelozx.kairos.common.ErrorCode;
+import com.felipemelozx.kairos.common.Result;
 import com.felipemelozx.kairos.dto.request.LoginRequest;
 import com.felipemelozx.kairos.dto.request.RegisterRequest;
 import com.felipemelozx.kairos.dto.response.UserResponse;
 import com.felipemelozx.kairos.entity.User;
 import com.felipemelozx.kairos.entity.enums.AuthProvider;
-import com.felipemelozx.kairos.exception.BusinessException;
 import com.felipemelozx.kairos.repository.UserRepository;
 import com.felipemelozx.kairos.security.jwt.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,10 +31,10 @@ public class AuthService {
     }
 
     @Transactional
-    public UserResponse register(RegisterRequest request) {
+    public Result<UserResponse> register(RegisterRequest request) {
         String email = normalizeEmail(request.email());
         if (userRepository.existsByEmail(email)) {
-            throw new BusinessException("EMAIL_EXISTS", "Email already registered");
+            return Result.err(ErrorCode.EMAIL_EXISTS);
         }
 
         User user = new User();
@@ -45,19 +46,22 @@ public class AuthService {
         user.setCreatedAt(Instant.now());
 
         User saved = userRepository.save(user);
-        return UserResponse.from(saved);
+        return Result.ok(UserResponse.from(saved));
     }
 
     @Transactional(readOnly = true)
-    public UserResponse login(LoginRequest request) {
-        User user = userRepository.findByEmailAndActiveIsTrue(normalizeEmail(request.email()))
-                .orElseThrow(() -> new BusinessException("INVALID_CREDENTIALS", "Invalid email or password"));
+    public Result<UserResponse> login(LoginRequest request) {
+        Optional<User> maybeUser = userRepository.findByEmailAndActiveIsTrue(normalizeEmail(request.email()));
+        if (maybeUser.isEmpty()) {
+            return Result.err(ErrorCode.INVALID_CREDENTIALS);
+        }
+        User user = maybeUser.get();
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new BusinessException("INVALID_CREDENTIALS", "Invalid email or password");
+            return Result.err(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        return UserResponse.from(user);
+        return Result.ok(UserResponse.from(user));
     }
 
     @Transactional
@@ -93,10 +97,10 @@ public class AuthService {
     public record RotatedSession(java.util.UUID userId, int tokenVersion) {}
 
     @Transactional
-    public RotatedSession rotateRefreshToken(String refreshToken) {
+    public Result<RotatedSession> rotateRefreshToken(String refreshToken) {
         if (refreshToken == null || !jwtService.validateToken(refreshToken)
                 || !jwtService.isRefreshToken(refreshToken)) {
-            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
+            return Result.err(ErrorCode.UNAUTHORIZED, "Refresh token expired or invalid");
         }
         String userId = jwtService.getUserIdFromToken(refreshToken);
         int tokenVersion = jwtService.getTokenVersionFromToken(refreshToken);
@@ -104,24 +108,28 @@ public class AuthService {
         try {
             id = java.util.UUID.fromString(userId);
         } catch (IllegalArgumentException e) {
-            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
+            return Result.err(ErrorCode.UNAUTHORIZED, "Refresh token expired or invalid");
         }
-        User user = userRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid"));
+        Optional<User> maybeUser = userRepository.findByIdForUpdate(id);
+        if (maybeUser.isEmpty()) {
+            return Result.err(ErrorCode.UNAUTHORIZED, "Refresh token expired or invalid");
+        }
+        User user = maybeUser.get();
         int currentVersion = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
         if (tokenVersion != currentVersion) {
-            throw new BusinessException("UNAUTHORIZED", "Refresh token expired or invalid");
+            return Result.err(ErrorCode.UNAUTHORIZED, "Refresh token expired or invalid");
         }
         int nextVersion = currentVersion + 1;
         user.setTokenVersion(nextVersion);
         userRepository.save(user);
-        return new RotatedSession(id, nextVersion);
+        return Result.ok(new RotatedSession(id, nextVersion));
     }
 
     @Transactional(readOnly = true)
-    public User findUserById(java.util.UUID userId) {
+    public Result<User> findUserById(java.util.UUID userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("NOT_FOUND", "User not found"));
+                .map(Result::<User>ok)
+                .orElseGet(() -> Result.err(ErrorCode.NOT_FOUND, "User not found"));
     }
 
     private String normalizeEmail(String email) {
